@@ -1,31 +1,37 @@
 # Aperture
 
-![Aperture banner](assets/banner.svg)
+![Aperture one-sheet](assets/one-sheet.svg)
 
 [![CI](https://github.com/lukethecat/aperture/actions/workflows/ci.yml/badge.svg)](https://github.com/lukethecat/aperture/actions/workflows/ci.yml)
 
 > A self-evolving news engine that focuses on what you actually want.
 
-Most "AI news" products today are just a prompt wrapped around a web search: stateless, unverified, full of duplicates, and deaf to feedback. They produce a summary, then forget everything.
+## The problem with AI news tools today
 
-This project is the opposite: a **deterministic, auditable, self-evolving news curation skill** built on four structural fixes:
+Most of them are **stateless prompt wrappers**: they search, summarize, and forget. The same stories reappear every day, the same event shows up five times across five feeds, and telling the tool "less crypto, more AI safety" changes nothing.
 
-| The problem | Our fix |
-|-------------|---------|
-| **No state** — every run starts from zero | **Tape** — an append-only JSONL log of every source snapshot, item, profile version, and decision |
-| **No verification** — LLM hallucinates dates and sources | **Three gates** — prescreen rules, structured LLM review, and URL/simhash deduplication |
-| **No deduplication** — the same event appears five times | **Frontpage diff + simhash clustering** — one event, one entry |
-| **No feedback loop** — the same wrong filters run forever | **Reflection loop** — user feedback becomes versioned profile operations |
+**Aperture is different.** It reads source front pages like a human, remembers everything in an append-only audit log, learns from your feedback, and can explain why any item was selected.
 
-The result is a system you can interrogate: "Why was this item selected?" "When was this keyword added, and why?" The tape has the answer.
+---
 
-![Aperture one-sheet](assets/one-sheet.svg)
+## What you get
 
-## Three differentiators
+| Without Aperture | With Aperture |
+|------------------|---------------|
+| Same headlines every day, duplicated across sources | One event, one entry — deduplicated by meaning |
+| "Why did it pick this?" | A full tape record: scan → score → review → cluster |
+| Static filters that drift | A versioned taste profile that evolves from your feedback |
+| Needs an LLM API key to run | Rule-only dry mode works without any API key |
 
-1. **Scan mode** — It reads sources like a human reads a newspaper front page: scan → diff → prescreen → review → pool. "New on the front page" is a more robust signal than parsing unreliable publish dates.
-2. **Tape audit** — Every decision is recorded. Rejected items keep their `reject_reason`; that negative signal is the fuel for calibration.
-3. **Reflection loop** — Feedback such as "more AI safety, fewer sponsored posts" is parsed into profile operations, versioned, logged, and validated against recent items.
+---
+
+## Three ideas that matter
+
+1. **Scan the front page** — Aperture diffs source front pages against yesterday, because "new on the front page" is a more robust signal than parsing unreliable publish dates.
+2. **Tape everything** — Every source snapshot, item, rejection reason, profile version, and report is stored in append-only JSONL. Rejected items are not deleted; they are the fuel for calibration.
+3. **Learn from feedback** — "More AI safety, fewer sponsored posts" becomes versioned profile operations. You can roll back any change and see what would have been filtered.
+
+---
 
 ## Architecture
 
@@ -43,15 +49,23 @@ The result is a system you can interrogate: "Why was this item selected?" "When 
 
 Read the full skill specification in [SKILL.md](SKILL.md). It is implementation-agnostic: you can run it with the included Python reference, with your own code, or directly as an LLM-agent pattern.
 
-## Visual identity
+---
 
-The project uses a Kandinsky-inspired constructivist visual language: bold geometric forms, primary colors, and dynamic lines that echo the idea of assembling a front page from discrete, auditable pieces. See [`assets/logo.svg`](assets/logo.svg), [`assets/banner.svg`](assets/banner.svg), and [`assets/social-card.svg`](assets/social-card.svg).
+## See a real issue
+
+[docs/sample-issue.md](docs/sample-issue.md) shows a complete daily report where every item includes its tape decision chain: why it passed prescreen, what the LLM review said, and which cluster it belongs to.
+
+---
 
 ## Quick start
 
 Requires Python 3.11+ (for `tomllib`; JSON configs work on earlier versions).
 
 ```bash
+# Clone the repo
+git clone https://github.com/lukethecat/aperture.git
+cd aperture
+
 # Rule-only dry run (no LLM required)
 python -m engine.pipeline --dry --vertical tech --config config/example_vertical.toml
 
@@ -60,15 +74,23 @@ export SENE_LLM_API_KEY="sk-..."
 python -m engine.pipeline --vertical tech --config config/example_vertical.toml
 ```
 
+---
+
+## Visual identity
+
+Aperture uses a Kandinsky-inspired constructivist visual language: bold geometric forms, primary colors, and dynamic lines that echo the idea of focusing light through a lens. See [`assets/logo.svg`](assets/logo.svg), [`assets/banner.svg`](assets/banner.svg), [`assets/social-card.svg`](assets/social-card.svg), and [`assets/one-sheet.svg`](assets/one-sheet.svg).
+
+---
+
 ## How to use this repository
 
 - **Want to understand the system?** Start with [SKILL.md](SKILL.md).
-- **Want to see a real daily report?** Read [docs/sample-issue.md](docs/sample-issue.md) — it shows a full issue with tape decision chains for every item.
 - **Want module-by-module advantages?** See [docs/module-showcase.md](docs/module-showcase.md).
-- **Want to run it?** Use the [engine/](engine/) reference implementation.
 - **Want the design rationale?** Read [DESIGN.md](DESIGN.md).
 - **Want to adapt it?** Copy [config/example_vertical.toml](config/example_vertical.toml) and edit sources, keywords, and negatives.
 - **Curious why the name changed?** See [docs/naming-options.md](docs/naming-options.md).
+
+---
 
 ## Project structure
 
@@ -110,19 +132,25 @@ aperture/
     └── test_smoke.py
 ```
 
+---
+
 ## Tests
 
 ```bash
-python -m pytest tests/test_smoke.py
+python tests/test_smoke.py -v
 ```
 
 All tests are offline.
+
+---
 
 ## Acknowledgments
 
 The append-only **tape** design is inspired by [bub](https://github.com/bubbuild/bub) —
 a hook-first, tape-driven agent framework that records every decision in an
 append-only log and reconstructs context from it.
+
+---
 
 ## License
 
