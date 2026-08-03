@@ -1,0 +1,67 @@
+# Example vertical configuration: generic tech news.
+# Copy/adapt this file to define your own vertical.
+
+vertical = "tech"
+
+[[keywords]]
+term = "AI"
+weight = 5
+
+[[keywords]]
+term = "machine learning"
+weight = 4
+
+[[keywords]]
+term = "open source"
+weight = 4
+
+[[keywords]]
+term = "security"
+weight = 4
+
+[[keywords]]
+term = "startup"
+weight = 3
+
+[[keywords]]
+term = "Linux"
+weight = 3
+
+[[negatives]]
+term = "sponsored"
+weight = 5
+
+[[negatives]]
+term = "deals"
+weight = 3
+
+[[negatives]]
+term = "review"
+weight = 2
+
+[[categories]]
+name = "policy"
+keywords = ["regulation", "law", "policy", "court", "antitrust"]
+bonus = 3
+
+[[categories]]
+name = "security"
+keywords = ["vulnerability", "breach", "exploit", "CVE", "malware"]
+bonus = 3
+
+[[categories]]
+name = "business"
+keywords = ["earnings", "revenue", "IPO", "acquisition", "layoff"]
+bonus = 2
+
+[[sources]]
+id = "hn_rss"
+name = "Hacker News"
+list_url = "https://news.ycombinator.com/rss"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "ars_rss"
+name = "Ars Technica"
+list_url = "https://feeds.arstechnica.com/arstechnica/index"
+extract_profile = { method = "rss" }
