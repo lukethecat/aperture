@@ -1,5 +1,9 @@
 # Self-Evolving News Engine
 
+![Self-Evolving News Engine banner](assets/banner.svg)
+
+[![CI](https://github.com/lukethecat/self-evolving-news-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/lukethecat/self-evolving-news-engine/actions/workflows/ci.yml)
+
 > A news engine that evolves its own taste through explicit feedback and full lifecycle auditing.
 
 Most "AI news" products today are just a prompt wrapped around a web search: stateless, unverified, full of duplicates, and deaf to feedback. They produce a summary, then forget everything.
@@ -39,6 +43,10 @@ The result is a system you can interrogate: "Why was this item selected?" "When 
 
 Read the full skill specification in [SKILL.md](SKILL.md). It is implementation-agnostic: you can run it with the included Python reference, with your own code, or directly as an LLM-agent pattern.
 
+## Visual identity
+
+The project uses a Kandinsky-inspired constructivist visual language: bold geometric forms, primary colors, and dynamic lines that echo the idea of assembling a front page from discrete, auditable pieces. See [`assets/logo.svg`](assets/logo.svg), [`assets/banner.svg`](assets/banner.svg), and [`assets/social-card.svg`](assets/social-card.svg).
+
 ## Quick start
 
 Requires Python 3.11+ (for `tomllib`; JSON configs work on earlier versions).
@@ -55,9 +63,12 @@ python -m engine.pipeline --vertical tech --config config/example_vertical.toml
 ## How to use this repository
 
 - **Want to understand the system?** Start with [SKILL.md](SKILL.md).
+- **Want to see a real daily report?** Read [docs/sample-issue.md](docs/sample-issue.md) — it shows a full issue with tape decision chains for every item.
+- **Want module-by-module advantages?** See [docs/module-showcase.md](docs/module-showcase.md).
 - **Want to run it?** Use the [engine/](engine/) reference implementation.
 - **Want the design rationale?** Read [DESIGN.md](DESIGN.md).
 - **Want to adapt it?** Copy [config/example_vertical.toml](config/example_vertical.toml) and edit sources, keywords, and negatives.
+- **Considering a rename?** See [docs/naming-options.md](docs/naming-options.md) for candidates and a recommendation.
 
 ## Project structure
 
@@ -67,6 +78,15 @@ self-evolving-news-engine/
 ├── README.md
 ├── LICENSE
 ├── DESIGN.md
+├── CONTRIBUTING.md
+├── assets/              # Kandinsky-style logos, banners, and social cards
+│   ├── logo.svg
+│   ├── banner.svg
+│   └── social-card.svg
+├── docs/                # deep-dive guides
+│   ├── module-showcase.md
+│   ├── sample-issue.md
+│   └── naming-options.md
 ├── engine/              # deterministic reference implementation
 │   ├── tape.py
 │   ├── profile.py
@@ -80,6 +100,9 @@ self-evolving-news-engine/
 │   └── pipeline.py
 ├── config/
 │   └── example_vertical.toml
+├── .github/
+│   ├── workflows/ci.yml
+│   └── ISSUE_TEMPLATE/
 └── tests/
     └── test_smoke.py
 ```
