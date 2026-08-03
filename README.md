@@ -15,6 +15,8 @@ This project is the opposite: a **deterministic, auditable, self-evolving news c
 
 The result is a system you can interrogate: "Why was this item selected?" "When was this keyword added, and why?" The tape has the answer.
 
+![Self-Evolving News Engine one-sheet](assets/Self-Evolving-News-Engine-one-sheet.png)
+
 ## Three differentiators
 
 1. **Scan mode** — It reads sources like a human reads a newspaper front page: scan → diff → prescreen → review → pool. "New on the front page" is a more robust signal than parsing unreliable publish dates.
