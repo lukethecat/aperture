@@ -15,7 +15,7 @@ lifecycle auditing.
 1. **Reflection loop** — User feedback is parsed into profile operations,
    versioned, and logged. The engine's preferences evolve.
 2. **Scan mode** — It reads sources like a human reads a newspaper front page:
-   scan版面 → keyword prescreen → structured review → pool/dedup.
+   scan the front page → keyword prescreen → structured review → pool/dedup.
 3. **Tape audit** — Every source snapshot, item, rejection reason, profile
    version, and report is stored in an append-only JSONL log.
 
