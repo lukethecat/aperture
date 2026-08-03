@@ -145,6 +145,13 @@ A: Set `extract_profile.method` to one of `rss`, `generic_links`, `regex`, or
 **Q: Where is the state stored?**  
 A: In the `tape/` directory, one `.jsonl` file per vertical.
 
+## Acknowledgments
+
+The append-only **tape** design is inspired by [bub](https://github.com/bubbuild/bub) —
+a hook-first, tape-driven agent framework that records every decision in an
+append-only log and reconstructs context from it. Thank you to the bub
+contributors for the elegant idea.
+
 ## License
 
 MIT
