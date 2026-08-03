@@ -171,5 +171,51 @@ class TestScanner(unittest.TestCase):
         self.assertEqual(items[0]["title"], "This is a long enough title")
 
 
+class TestEcho(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="sene_test_")
+        self._orig_tape_dir = tape._tape_dir
+        tape._tape_dir = lambda: self.tmpdir
+
+    def tearDown(self):
+        tape._tape_dir = self._orig_tape_dir
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_echo_generates_question(self):
+        from engine import echo
+        profile.init_profile(
+            "v",
+            keywords=[{"term": "AI", "weight": 5}],
+            categories=[],
+            negatives=[],
+        )
+        items = [
+            {"title": "Quantum breakthrough", "url": "http://example.com/1", "stage": "pooled"},
+            {"title": "Quantum chips advance", "url": "http://example.com/2", "stage": "pooled"},
+        ]
+        questions = echo.generate_questions("v", items=items)
+        self.assertTrue(len(questions) > 0)
+        self.assertEqual(questions[0]["topic"], "Quantum")
+
+    def test_echo_answer_adds_keyword(self):
+        from engine import echo
+        profile.init_profile(
+            "v",
+            keywords=[{"term": "AI", "weight": 5}],
+            categories=[],
+            negatives=[],
+        )
+        items = [
+            {"title": "Quantum breakthrough", "url": "http://example.com/1", "stage": "pooled"},
+            {"title": "Quantum chips advance", "url": "http://example.com/2", "stage": "pooled"},
+        ]
+        questions = echo.ask("v", items=items)
+        self.assertTrue(len(questions) > 0)
+        result = echo.apply_answer(questions[0]["id"], "v", "yes")
+        self.assertEqual(result["status"], "applied")
+        pos, _ = profile.get_keyword_map("v")
+        self.assertIn("Quantum", pos)
+
+
 if __name__ == "__main__":
     unittest.main()

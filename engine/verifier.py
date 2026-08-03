@@ -156,10 +156,6 @@ def extract_published_at(raw_html: str) -> str:
         date_str = meta_match.group(1)[:10]
         if re.match(r'\d{4}-\d{2}-\d{2}', date_str):
             return date_str
-    cn_match = re.search(r'(\d{4})年(\d{1,2})月(\d{1,2})日', raw_html)
-    if cn_match:
-        y, m, d = cn_match.groups()
-        return f"{y}-{int(m):02d}-{int(d):02d}"
     return ""
 
 

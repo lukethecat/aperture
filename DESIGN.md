@@ -68,6 +68,16 @@ the new profile would have filtered them.
 Learned keywords that do not hit for a configurable period are decayed;
 manual keywords are never auto-deleted.
 
+## ECHO — proactive clarification
+
+An optional layer that asks the user up to two one-word clarification questions
+after each report, backed by tape evidence. Positive answers add keywords;
+negative answers add negative terms. ECHO respects rate limits and can be
+silenced by the user.
+
+This turns passive readers into active profile trainers without forcing them
+to write full feedback queries.
+
 ## Source-acquisition taxonomy
 
 Sources can be acquired in five ways, but the engine treats them uniformly
@@ -78,7 +88,7 @@ once they land on the tape:
 | pull | RSS/API/curl on cron | RSS feeds |
 | scan | frontpage diff + keyword prescreen | SPA or irregular sites |
 | push | webhook/SSE/bridge | internal alerts |
-| search | ad-hoc search for new leads | major-event补采 |
+| search | ad-hoc search for new leads | major-event catch-up |
 | human-feed | user drops a link | exclusive tips |
 
 The engine only needs a `list_url` and an `extract_profile`. How the HTML
