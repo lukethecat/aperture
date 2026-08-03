@@ -1,6 +1,6 @@
 # Module Showcase
 
-Each module in the Self-Evolving News Engine solves one specific problem in the news curation pipeline. Together they form a deterministic backbone that keeps the expensive judgment layers (LLM review, feedback parsing) honest and auditable.
+Each module in Aperture solves one specific problem in the news curation pipeline. Together they form a deterministic backbone that keeps the expensive judgment layers (LLM review, feedback parsing) honest and auditable.
 
 ---
 

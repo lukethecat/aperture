@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <!-- background -->
+  <rect width="1920" height="1080" fill="#0d1117"/>
+
+  <!-- header -->
+  <text x="960" y="110" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" letter-spacing="6" fill="#8b949e">OPEN SOURCE · MIT LICENSE</text>
+  <text x="960" y="200" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="96" font-weight="700" fill="#f0f6fc">Aperture</text>
+  <text x="960" y="270" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="32" fill="#c9d1d9">A self-evolving news engine that focuses on what you actually want.</text>
+
+  <!-- divider -->
+  <line x1="360" y1="310" x2="1560" y2="310" stroke="#30363d" stroke-width="2"/>
+
+  <!-- four structural fixes -->
+  <g transform="translate(0, 360)">
+    <!-- row 1 -->
+    <text x="420" y="50" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="28" fill="#8b949e">× No state</text>
+    <line x1="620" y1="38" x2="720" y2="38" stroke="#58a6ff" stroke-width="3" marker-end="url(#arrow)"/>
+    <text x="760" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="32" font-weight="700" fill="#58a6ff">TAPE</text>
+    <text x="760" y="70" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="22" fill="#c9d1d9">Append-only JSONL — every snapshot, item, profile version and decision.</text>
+
+    <!-- row 2 -->
+    <text x="420" y="170" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="28" fill="#8b949e">× No verification</text>
+    <line x1="620" y1="158" x2="720" y2="158" stroke="#f4a261" stroke-width="3"/>
+    <text x="760" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="32" font-weight="700" fill="#f4a261">THREE GATES</text>
+    <text x="760" y="190" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="22" fill="#c9d1d9">Prescreen rules → structured LLM review → URL and simhash deduplication.</text>
+
+    <!-- row 3 -->
+    <text x="420" y="290" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="28" fill="#8b949e">× No deduplication</text>
+    <line x1="620" y1="278" x2="720" y2="278" stroke="#e63946" stroke-width="3"/>
+    <text x="760" y="270" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="32" font-weight="700" fill="#e63946">FRONTPAGE DIFF + CLUSTERING</text>
+    <text x="760" y="310" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="22" fill="#c9d1d9">New-on-the-page beats unreliable publish dates. One event, one entry.</text>
+
+    <!-- row 4 -->
+    <text x="420" y="410" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="28" fill="#8b949e">× No feedback loop</text>
+    <line x1="620" y1="398" x2="720" y2="398" stroke="#c9d1d9" stroke-width="3"/>
+    <text x="760" y="390" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="32" font-weight="700" fill="#c9d1d9">REFLECTION LOOP</text>
+    <text x="760" y="430" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="22" fill="#c9d1d9">Less crypto, more AI safety — becomes versioned, rollback-able profile ops.</text>
+  </g>
+
+  <!-- pipeline -->
+  <text x="960" y="880" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="36" font-weight="700" fill="#f0f6fc">SCAN → DIFF → PRESCREEN → REVIEW → POOL</text>
+
+  <!-- tape bar -->
+  <rect x="360" y="920" width="1200" height="50" rx="25" fill="none" stroke="#f4a261" stroke-width="2"/>
+  <text x="960" y="953" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" font-weight="600" fill="#f4a261">APPEND-ONLY TAPE — ASK WHY ANY ITEM WAS SELECTED, AND GET AN ANSWER</text>
+
+  <!-- footer -->
+  <text x="360" y="1030" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="22" fill="#8b949e">Python reference · implementation-agnostic skill</text>
+  <text x="1560" y="1030" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="24" fill="#58a6ff">github.com/lukethecat/aperture</text>
+
+  <!-- Kandinsky accent shapes -->
+  <circle cx="180" cy="200" r="80" fill="none" stroke="#e63946" stroke-width="3" opacity="0.7"/>
+  <circle cx="1740" cy="880" r="100" fill="none" stroke="#58a6ff" stroke-width="4" opacity="0.7"/>
+  <polygon points="1700,200 1750,280 1650,280" fill="#f4a261" opacity="0.8"/>
+  <polygon points="220,900 270,820 170,820" fill="#e63946" opacity="0.8"/>
+  <line x1="0" y1="540" x2="1920" y2="540" stroke="#58a6ff" stroke-width="2" opacity="0.2"/>
+</svg>

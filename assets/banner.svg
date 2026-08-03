@@ -21,8 +21,8 @@
   <line x1="380" y1="220" x2="540" y2="220" stroke="#e63946" stroke-width="2" opacity="0.5"/>
 
   <!-- text block -->
-  <text x="580" y="170" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="52" font-weight="700" fill="#f0f6fc">Self-Evolving News Engine</text>
-  <text x="582" y="215" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="24" fill="#c9d1d9">Reads front pages. Learns from feedback. Logs every decision.</text>
+  <text x="580" y="170" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="52" font-weight="700" fill="#f0f6fc">Aperture</text>
+  <text x="582" y="215" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="24" fill="#c9d1d9">A self-evolving news engine that focuses on what you actually want.</text>
 
   <!-- pipeline chips -->
   <rect x="580" y="250" width="90" height="34" rx="17" fill="#58a6ff" opacity="0.15"/>
@@ -37,5 +37,5 @@
   <rect x="895" y="250" width="90" height="34" rx="17" fill="#c9d1d9" opacity="0.15"/>
   <text x="940" y="273" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#c9d1d9">publish</text>
 
-  <text x="580" y="320" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#8b949e">Open source · MIT · github.com/lukethecat/self-evolving-news-engine</text>
+  <text x="580" y="320" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#8b949e">Open source · MIT · github.com/lukethecat/aperture</text>
 </svg>

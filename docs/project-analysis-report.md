@@ -5,7 +5,7 @@
 ## Executive summary
 
 1. **The three differentiators (reflection loop, scan mode, tape audit) are genuinely scarce** in the open-source news curation space, but the project currently under-sells the *consequence* of those differences. The README explains the mechanism; it does not yet make the reader feel the pain of living without it.
-2. **Naming is the highest-leverage near-term decision.** "Self-Evolving News Engine" is accurate but forgettable. **Paperboy** is the strongest candidate because it carries a story, not just a description.
+2. **Naming is the highest-leverage near-term decision.** "Self-Evolving News Engine" is accurate but forgettable. **Aperture** was selected because it combines a modern visual metaphor (focus/light/geometry) with the pipeline's core operation: only what matters gets through.
 3. **The sample issue is the most persuasive asset the project can build.** A real-looking daily report with visible tape decision chains turns an abstract architecture into proof.
 4. **The biggest current weakness is lack of a single, stunning first impression.** The repo is complete and correct, but nothing in the first 10 seconds screams "this is obviously better."
 5. **AI Nativeness is claimed but not yet demonstrated.** The project describes an agent harness model; it should ship a minimal agent runner that actually executes SKILL.md steps with an LLM.
@@ -18,20 +18,21 @@
 
 | Name | Strength | Weakness | Verdict |
 |------|----------|----------|---------|
-| Self-Evolving News Engine | Searchable, literal | No story, no emotion, hard to remember | Keep as subtitle, not brand |
-| **Paperboy** | Human story, growth metaphor, visualizable, short | Could sound consumer-ish | **Lead candidate** |
+| Self-Evolving News Engine | Searchable, literal | No story, no emotion, hard to remember | Original name |
+| Paperboy | Human story, growth metaphor, visualizable, short | Could sound consumer-ish | Too folksy |
+| **Aperture** | Modern, visual, maps to focus/filter funnel | Slightly abstract | **Selected** |
 | Kiosk | Strong front-page metaphor, pairs with visual identity | Less evolution signal | Runner-up |
 | Scoop | Industry term, punchy | Weak link to feedback/auditing | Too narrow |
 | Molt | Strongest evolution metaphor | Cold, biological, potentially off-putting | Avoid |
 
 ### Recommendation
 
-Use **Paperboy** as the project brand.
+Use **Aperture** as the project brand.
 
-- Repo: `lukethecat/paperboy`
-- PyPI: `paperboy-engine`
-- Display: **Paperboy**
-- Subtitle: *A self-evolving news curation engine*
+- Repo: `lukethecat/aperture`
+- PyPI: `aperture-engine`
+- Display: **Aperture**
+- Subtitle: *A self-evolving news engine that focuses on what you actually want.*
 
 The name works because a paperboy learns a route, remembers preferences, and improves delivery over time — exactly the narrative the project wants.
 
@@ -149,7 +150,7 @@ A plus, if executed with restraint. Developers are tired of generic hero illustr
 
 ## 6. Growth channels for 2026
 
-Beyond HN/Reddit/X/掘金:
+Beyond HN/Reddit/X/Juejin:
 
 1. **Agent skill marketplaces.** If platforms like Anthropic's Computer Use, OpenAI's GPTs, or Kimi skills allow uploaded instructions, package SKILL.md as a installable skill.
 2. **LLM tool directories.** Submit to directories that catalog tools for LLM agents (e.g., MCP server lists, agent tool registries).
@@ -215,7 +216,7 @@ The fastest path to 100 real users is a single, shareable proof point. Recommend
 1. Implement `engine/agent_runner.py` to demonstrate AI-native execution.
 2. Add a comparison page (`docs/comparison.md`).
 3. Submit to agent tool directories and MCP server lists.
-4. Post launch threads on HN, Reddit, X, and 掘金.
+4. Post launch threads on HN, Reddit, X, and Juejin.
 
 ### Do this quarter
 
@@ -228,6 +229,6 @@ The fastest path to 100 real users is a single, shareable proof point. Recommend
 
 ## Naming final recommendation
 
-**Paperboy.**
+**Aperture.**
 
-Reason: it tells a story, is easy to spell and visualize, and maps cleanly onto the project's core loop (scan route → deliver → learn → improve). Keep "Self-Evolving News Engine" as the subtitle for SEO and clarity.
+Reason: it is modern, visual, and immediately maps onto the project's core operation — opening a focused view onto the signal and filtering out the noise. It pairs naturally with a geometric, Kandinsky-inspired identity and is easy to pronounce across languages. Keep "Self-Evolving News Engine" as the subtitle for SEO and clarity.

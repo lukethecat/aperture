@@ -15,7 +15,7 @@
 
 技术形态：skill-first（SKILL.md 是核心，LLM agent 可直接执行模式），Python 参考实现（纯标准库，LLM 供应商配置化，无 key 可 --dry 纯规则跑），MIT，全英文。
 
-仓库：https://github.com/lukethecat/self-evolving-news-engine
+仓库：https://github.com/lukethecat/aperture
 文档：README.md / SKILL.md / DESIGN.md / docs/module-showcase.md / docs/sample-issue.md / docs/naming-options.md
 
 ## 项目方已规划的改进方向（请验证 + 补充）

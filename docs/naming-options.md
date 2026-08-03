@@ -1,12 +1,24 @@
 # Naming Options
 
-The current name, **Self-Evolving News Engine**, is descriptive and search-friendly, but it reads like a feature list rather than a story. Below are candidates that trade a little literal clarity for memorability, emotion, and visual identity.
+The original name, **Self-Evolving News Engine**, was descriptive and search-friendly, but it read like a feature list rather than a story. The project has been renamed to **Aperture**.
 
 ---
 
-## Shortlist
+## Decision
 
-### 1. Paperboy *(recommended)*
+**Selected name: Aperture**
+
+- Repository: `lukethecat/aperture`
+- Display name: **Aperture**
+- Subtitle: *A self-evolving news engine that focuses on what you actually want.*
+
+Aperture evokes a lens opening: only the light that matters gets through. It maps cleanly onto the pipeline's funnel (scan → prescreen → review → publish) and pairs well with a Kandinsky-inspired geometric visual identity.
+
+---
+
+## Historical shortlist
+
+### 1. Paperboy
 
 **Rationale:**
 - A paperboy delivers the day's news, learns your preferences over time, and grows into the route. The metaphor maps cleanly onto "scan → deliver → learn → evolve".

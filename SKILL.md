@@ -27,7 +27,7 @@ table { border-collapse: collapse; width: 100%; margin: 16px 0; }
 th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
 th { background: var(--code); }
 
-# Skill: Self-Evolving News Engine
+# Skill: Aperture
 
 > **TL;DR** — A deterministic news-curation skill: scan source front pages, diff them against yesterday, prescreen with a weighted profile, review with an LLM, deduplicate, publish, and evolve the profile from user feedback. All decisions go to an append-only tape.
 

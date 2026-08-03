@@ -1,10 +1,10 @@
-# Self-Evolving News Engine
+# Aperture
 
-![Self-Evolving News Engine banner](assets/banner.svg)
+![Aperture banner](assets/banner.svg)
 
-[![CI](https://github.com/lukethecat/self-evolving-news-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/lukethecat/self-evolving-news-engine/actions/workflows/ci.yml)
+[![CI](https://github.com/lukethecat/aperture/actions/workflows/ci.yml/badge.svg)](https://github.com/lukethecat/aperture/actions/workflows/ci.yml)
 
-> A news engine that evolves its own taste through explicit feedback and full lifecycle auditing.
+> A self-evolving news engine that focuses on what you actually want.
 
 Most "AI news" products today are just a prompt wrapped around a web search: stateless, unverified, full of duplicates, and deaf to feedback. They produce a summary, then forget everything.
 
@@ -19,7 +19,7 @@ This project is the opposite: a **deterministic, auditable, self-evolving news c
 
 The result is a system you can interrogate: "Why was this item selected?" "When was this keyword added, and why?" The tape has the answer.
 
-![Self-Evolving News Engine one-sheet](assets/Self-Evolving-News-Engine-one-sheet.png)
+![Aperture one-sheet](assets/one-sheet.svg)
 
 ## Three differentiators
 
@@ -68,12 +68,12 @@ python -m engine.pipeline --vertical tech --config config/example_vertical.toml
 - **Want to run it?** Use the [engine/](engine/) reference implementation.
 - **Want the design rationale?** Read [DESIGN.md](DESIGN.md).
 - **Want to adapt it?** Copy [config/example_vertical.toml](config/example_vertical.toml) and edit sources, keywords, and negatives.
-- **Considering a rename?** See [docs/naming-options.md](docs/naming-options.md) for candidates and a recommendation.
+- **Curious why the name changed?** See [docs/naming-options.md](docs/naming-options.md).
 
 ## Project structure
 
 ```
-self-evolving-news-engine/
+aperture/
 ├── SKILL.md             # primary skill specification (start here)
 ├── README.md
 ├── LICENSE
@@ -82,11 +82,14 @@ self-evolving-news-engine/
 ├── assets/              # Kandinsky-style logos, banners, and social cards
 │   ├── logo.svg
 │   ├── banner.svg
-│   └── social-card.svg
+│   ├── social-card.svg
+│   └── one-sheet.svg
 ├── docs/                # deep-dive guides
 │   ├── module-showcase.md
 │   ├── sample-issue.md
-│   └── naming-options.md
+│   ├── naming-options.md
+│   ├── project-analysis-report.md
+│   └── k3-analysis-brief.md
 ├── engine/              # deterministic reference implementation
 │   ├── tape.py
 │   ├── profile.py

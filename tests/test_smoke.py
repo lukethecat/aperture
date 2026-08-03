@@ -1,5 +1,5 @@
 """
-Smoke tests for self-evolving-news-engine.
+Smoke tests for aperture.
 
 Run with: python -m pytest tests/test_smoke.py
 Or:       python tests/test_smoke.py
