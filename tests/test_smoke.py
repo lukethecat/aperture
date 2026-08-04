@@ -22,7 +22,7 @@ from engine import tape, profile, prescreen, dedup, scanner
 
 class TestTape(unittest.TestCase):
     def setUp(self):
-        self.tmpdir = tempfile.mkdtemp(prefix="sene_test_")
+        self.tmpdir = tempfile.mkdtemp(prefix="aperture_test_")
         # Monkey-patch tape directory to tmp dir
         self._orig_tape_dir = tape._tape_dir
         tape._tape_dir = lambda: self.tmpdir
@@ -47,7 +47,7 @@ class TestTape(unittest.TestCase):
 
 class TestProfile(unittest.TestCase):
     def setUp(self):
-        self.tmpdir = tempfile.mkdtemp(prefix="sene_test_")
+        self.tmpdir = tempfile.mkdtemp(prefix="aperture_test_")
         self._orig_tape_dir = tape._tape_dir
         tape._tape_dir = lambda: self.tmpdir
 
@@ -80,7 +80,7 @@ class TestProfile(unittest.TestCase):
 
 class TestPrescreen(unittest.TestCase):
     def setUp(self):
-        self.tmpdir = tempfile.mkdtemp(prefix="sene_test_")
+        self.tmpdir = tempfile.mkdtemp(prefix="aperture_test_")
         self._orig_tape_dir = tape._tape_dir
         tape._tape_dir = lambda: self.tmpdir
         profile.init_profile(
@@ -116,7 +116,7 @@ class TestPrescreen(unittest.TestCase):
 
 class TestDedup(unittest.TestCase):
     def setUp(self):
-        self.tmpdir = tempfile.mkdtemp(prefix="sene_test_")
+        self.tmpdir = tempfile.mkdtemp(prefix="aperture_test_")
         self._orig_tape_dir = tape._tape_dir
         tape._tape_dir = lambda: self.tmpdir
 
@@ -173,7 +173,7 @@ class TestScanner(unittest.TestCase):
 
 class TestEcho(unittest.TestCase):
     def setUp(self):
-        self.tmpdir = tempfile.mkdtemp(prefix="sene_test_")
+        self.tmpdir = tempfile.mkdtemp(prefix="aperture_test_")
         self._orig_tape_dir = tape._tape_dir
         tape._tape_dir = lambda: self.tmpdir
 

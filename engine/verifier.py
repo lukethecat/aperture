@@ -3,7 +3,7 @@ verifier.py — Structured second-pass review (the "review" stage).
 
 LLM calls are abstracted behind a provider interface. The engine ships with
 an OpenAI-compatible provider; users can supply their own by setting
-SENE_LLM_PROVIDER to a dotted callable path.
+APERTURE_LLM_PROVIDER (or the legacy SENE_LLM_PROVIDER) to a dotted callable path.
 
 Without a configured provider, the pipeline falls back to a rule-only pass.
 """
@@ -45,11 +45,16 @@ Output ONLY a JSON array. Do not include markdown, explanations, or any text out
 """
 
 
+def _env_with_legacy(name: str, default: str = "") -> str:
+    """Read a setting using the Aperture name, falling back to the legacy SENE name."""
+    return os.environ.get(f"APERTURE_{name}", os.environ.get(f"SENE_{name}", default))
+
+
 def _openai_compatible_provider(prompt: str) -> Optional[Any]:
     """Default provider: OpenAI-compatible chat completions endpoint."""
-    base_url = os.environ.get("SENE_LLM_BASE_URL", "https://api.openai.com/v1")
-    api_key = os.environ.get("SENE_LLM_API_KEY", "")
-    model = os.environ.get("SENE_LLM_MODEL", "gpt-3.5-turbo")
+    base_url = _env_with_legacy("LLM_BASE_URL", "https://api.openai.com/v1")
+    api_key = _env_with_legacy("LLM_API_KEY", "")
+    model = _env_with_legacy("LLM_MODEL", "gpt-3.5-turbo")
 
     if not api_key:
         return None
@@ -97,7 +102,7 @@ def get_llm_provider() -> Optional[Callable[[str], Any]]:
     if _LLM_PROVIDER is not None:
         return _LLM_PROVIDER
 
-    provider_path = os.environ.get("SENE_LLM_PROVIDER", "")
+    provider_path = _env_with_legacy("LLM_PROVIDER", "")
     if provider_path:
         try:
             module_name, callable_name = provider_path.rsplit(".", 1)
@@ -107,7 +112,7 @@ def get_llm_provider() -> Optional[Callable[[str], Any]]:
         except Exception:
             return None
 
-    if os.environ.get("SENE_LLM_API_KEY", ""):
+    if _env_with_legacy("LLM_API_KEY", ""):
         _LLM_PROVIDER = _openai_compatible_provider
         return _LLM_PROVIDER
 

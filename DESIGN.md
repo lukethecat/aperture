@@ -106,5 +106,5 @@ simple HTML parsing rather than full DOM libraries.
 - New vertical: add a config file; no engine changes.
 - New source method: add a handler in `scanner.extract_items`.
 - New LLM backend: implement a provider callable and point
-  `SENE_LLM_PROVIDER` to it.
+  `APERTURE_LLM_PROVIDER` to it (the legacy `SENE_LLM_PROVIDER` name still works).
 - New report format: replace or extend `report.generate_report`.

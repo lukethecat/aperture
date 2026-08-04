@@ -232,7 +232,7 @@ Each tape line is a JSON object with a `type` field.
 python -m engine.pipeline --dry --vertical tech --config config/example_vertical.toml
 
 # With LLM review
-export SENE_LLM_API_KEY="sk-..."
+export APERTURE_LLM_API_KEY="sk-..."
 python -m engine.pipeline --vertical tech --config config/example_vertical.toml
 
 # Apply feedback
