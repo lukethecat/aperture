@@ -36,7 +36,7 @@ Aperture is different: it remembers everything, learns from your feedback, and c
 2. **Tape everything.** Every source snapshot, item, rejection reason, profile version, and report goes into an append-only JSONL tape. Nothing is silently dropped: rejected items are fuel for calibration. Ask *"why was #14 cut?"* — the tape answers.
 3. **Learn from feedback, reversibly.** "More AI safety, fewer sponsored posts" becomes versioned profile operations — not a re-prompt. Roll back any change and replay what would have been filtered.
 
-**Plus:** Aperture is AI-native — [SKILL.md](SKILL.md) is the primary spec, executable directly as an LLM-agent pattern. And it degrades gracefully: `--dry` runs the whole pipeline on rules alone, no API key needed.
+**Plus:** Aperture is AI-native — [SKILL.md](SKILL.md) is the primary spec, executable directly as an LLM-agent pattern. See [`agent_runner.py`](agent_runner.py) for a working agent-orchestrated loop. And it degrades gracefully: `--dry` runs the whole pipeline on rules alone, no API key needed.
 
 ---
 
@@ -105,13 +105,14 @@ The script runs the pipeline in `--dry` mode, prints the latest daily report, an
 
 ```
 aperture/
-├── SKILL.md      # primary skill specification
-├── DESIGN.md     # design rationale
-├── engine/       # deterministic reference implementation
-├── config/       # example vertical configs
-├── assets/       # logo, banner, social card, one-sheet
-├── docs/         # deep dives, sample issue, analysis
-└── tests/        # offline smoke tests
+├── SKILL.md        # primary skill specification
+├── agent_runner.py # LLM-agent orchestration demo
+├── DESIGN.md       # design rationale
+├── engine/         # deterministic reference implementation
+├── config/         # example vertical configs
+├── assets/         # logo, banner, social card, one-sheet, demo screenshot
+├── docs/           # deep dives, sample issue, analysis
+└── tests/          # offline smoke tests
 ```
 
 </details>
