@@ -1,116 +1,117 @@
 # Sample Issue — Tech Vertical, 2026-08-04
 
-This page shows what a real daily report looks like and, more importantly, **why each item was selected**. Every decision below is backed by a record in the append-only tape.
+This page is **not mock data**. It is rendered from a real dry-run of the pipeline (`--dry` mode: prescreen and dedup run for real, the LLM review gate is stubbed — `verify.llm_called=false` on every item). Every selection and rejection below is backed by an append-only record in [`tape/sample-tech.jsonl`](../tape/sample-tech.jsonl); you can replay the run end to end from that file.
 
-> The full tape for this sample is available in [`tape/tech.jsonl`](../tape/tech.jsonl) after running the reference implementation.
+> Run stats for this issue: 50 items scanned, 64 prescreened, 43 rejected, 7 pooled, 7 formatted.
 
 ---
 
-## Engine configuration
+## Engine configuration (profile v1, loaded from config)
 
-```toml
-[vertical]
-name = "tech"
-keywords = [
-  { term = "AI", weight = 3 },
-  { term = "quantum", weight = 3 },
-  { term = "open source", weight = 2 },
-  { term = "security", weight = 2 },
-]
-negatives = [
-  { term = "sponsored", weight = 4 },
-  { term = "careers", weight = 4 },
-  { term = "webinar", weight = 3 },
-]
-categories = [
-  { name = "policy", bonus = 2 },
-  { name = "safety", bonus = 2 },
-]
-```
-
-Sources: Hacker News RSS, Ars Technica RSS.
+- **Keywords:** `AI` (5), `machine learning` (4), `open source` (4), `security` (4), `startup` (3), `Linux` (3)
+- **Negatives:** `sponsored` (5), `deals` (3), `review` (2)
+- **Category bonuses:** `policy` (+3), `security` (+3), `business` (+2)
+- **Sources:** Hacker News RSS, Ars Technica RSS
 
 ---
 
 ## Today's report
 
-### 1. OpenAI publishes new safety framework
+### 1. Devtools must be open source
 
-- **Main source:** Ars Technica — `https://arstechnica.com/ai/2026/08/openai-publishes-new-safety-framework/`
-- **Related sources:** The Verge, TechCrunch (clustered by title simhash)
+- **Source:** Hacker News — `https://blog.exe.dev/devtools-must-be-open-source`
 - **Tape decision chain:**
-  1. **Scan:** New URL on Ars Technica front page at 08:14 UTC.
-  2. **URL normalize:** Dropped `?amp=1` fragment → `url_norm` stored.
-  3. **Prescreen:** Matched keywords `AI` (+3) and `safety` category (+2) → score **5**, passed.
-  4. **Review:** LLM confirmed `is_news=true`, `is_ad=false`, `vertical_fit=0.92`.
-  5. **Dedup:** Simhash clustered with 2 related sources; selected as main item because it had the highest score.
-- **Why it matters:** Demonstrates the three gates working together — cheap rule gate catches the topic, strict LLM gate confirms quality, dedup gate collapses three sources into one entry.
+  1. **Scan:** New URL on HN RSS at 00:11:00.785 UTC.
+  2. **Prescreen:** Matched keyword `open source` (+4) → score **4**, passed.
+  3. **Review:** Dry run — LLM gate stubbed, item carried through unverified.
+  4. **Dedup/cluster:** No prior URL or simhash match → new cluster `cc78beeb3765`, item is its own main entry.
+- **Why it's here:** A single high-weight keyword was enough. The tape records exactly which term fired and its weight, so the decision is explainable without guessing.
 
 ---
 
-### 2. Linux kernel patch fixes decade-old TCP bug
+### 2. What's the largest software project AI can complete on its own?
 
-- **Main source:** Hacker News — `https://news.ycombinator.com/item?id=44445555`
+- **Source:** Hacker News — `https://epoch.ai/MirrorCode`
 - **Tape decision chain:**
-  1. **Scan:** New on HN front page at 09:02 UTC.
-  2. **Prescreen:** Matched `security` (+2) and `open source` (+2) → score **4**, passed.
-  3. **Review:** LLM confirmed `is_news=true`, `vertical_fit=0.88`.
-  4. **Dedup:** No URL or simhash match in the last 14 days → new cluster.
-- **Why it matters:** Shows how broad terms like "security" and "open source" surface high-signal engineering news without requiring every possible keyword.
+  1. **Scan:** New URL on HN RSS at 00:11:01.170 UTC.
+  2. **URL normalize:** Host lowercased, path lowercased → `url_norm = https://epoch.ai/mirrorcode`.
+  3. **Prescreen:** Matched keyword `AI` (+5) → score **5**, passed.
+  4. **Review:** Dry run — LLM gate stubbed.
+  5. **Dedup/cluster:** New cluster `d02fcce3d996`.
+- **Why it's here:** The `AI` keyword is the heaviest term in the profile (weight 5) and drove most of today's pool — visible in the profile's `last_hit` timestamps.
 
 ---
 
-### 3. Startup claims quantum breakthrough; experts are skeptical
+### 3. An AI-supervised remote exam went so badly that 58,000 students must retake it
 
-- **Main source:** Hacker News — `https://news.ycombinator.com/item?id=44446666`
+- **Source:** Ars Technica — `https://arstechnica.com/culture/2026/08/an-ai-supervised-remote-exam-went-so-badly-that-58000-students-must-retake-it/`
 - **Tape decision chain:**
-  1. **Scan:** New on HN front page at 10:21 UTC.
-  2. **Prescreen:** Matched `quantum` (+3) → score **3**, passed.
-  3. **Review:** LLM flagged `vertical_fit=0.71`, noted skepticism in title.
-  4. **Dedup:** New cluster.
-- **Why it matters:** A lower-fit item still makes the report because the prescreen gate was wide enough to let it through. The reflection loop can later learn whether the user wants more or less quantum hype.
+  1. **Scan:** New URL on Ars Technica RSS at 00:11:01.249 UTC.
+  2. **Prescreen:** Matched keyword `AI` (+5) → score **5**, passed. No category bonus, no negatives.
+  3. **Review:** Dry run — LLM gate stubbed.
+  4. **Dedup/cluster:** New cluster `9be40713503f`.
+- **Why it's here:** Keyword match only — no category fired. In a live run, the review gate would be the next check on whether an AI-in-education story fits the vertical; in this dry run the tape shows that check was not exercised.
+
+---
+
+### 4. Defcon's new badge is a security key you can see inside
+
+- **Source:** Ars Technica — `https://arstechnica.com/security/2026/08/defcons-new-badge-is-a-security-key-you-can-see-inside/`
+- **Tape decision chain:**
+  1. **Scan:** New URL on Ars Technica RSS at 00:11:01.395 UTC.
+  2. **Prescreen:** Matched keyword `security` (+4) → score **4**, passed. Note: the `security` *category* did not fire — none of its terms (`vulnerability`, `breach`, `exploit`, `CVE`, `malware`) appear in the title.
+  3. **Review:** Dry run — LLM gate stubbed.
+  4. **Dedup/cluster:** New cluster `18a19624c95f`.
+- **Why it's here:** A clean example of keyword vs. category scoring being recorded separately in the tape — same word, different gates.
+
+The remaining 3 pooled items (`1f66fc2d1745`, `fdb78af59ef8`, `c3f986b171fd`) followed the same chain: single `AI` keyword match, score 5, new cluster each.
 
 ---
 
 ## What got rejected (and why)
 
+All 43 rejections are in the tape with `stage: rejected` and a machine-readable `reject_reason`. Representative sample:
+
 | Title | Stage | Reason | Learning signal |
 |-------|-------|--------|-----------------|
-| "10x engineer hiring guide" | prescreen | `low_score` (matched `careers` negative, no positives) | Confirms negative list is working |
-| "Sponsored: best cloud GPUs" | prescreen | `low_score` (matched `sponsored` negative) | Negative term is effective |
-| "Register for our AI webinar" | prescreen | `low_score` (matched `webinar` negative) | User does not want event marketing |
-| "Apple releases iOS 27 beta" | review | `low_fit` | Too product-launch focused for this vertical |
+| "Ask HN: Who is hiring? (August 2026)" | prescreen | `low_score` (score 0, no keyword matched) | Recurring HN threads are filtered without needing a negative term |
+| "Review: Yes, we're still arguing about Nolan's The Odyssey" | prescreen | `low_score` (score −2, matched negative `review` weight 2) | Negative list is working; `last_hit` on `review` updated in the profile |
+| "LLMs reward expertise" | prescreen | `low_score` (score 0, no keyword matched) | Borderline — arguably on-topic, but "LLM" is not a profile keyword |
+| "Ten advances in mathematics and theoretical computer science" | prescreen | `low_score` (score 0, no keyword matched) | Correct rejection for this vertical |
+| "Windows XP 2002 for the Itanium: Unbridled rage" | prescreen | `low_score` (score 0, no keyword matched) | Correct rejection — retrocomputing is out of scope |
+| "Smaller, faster, safer: running Kimi and GLM at scale" | prescreen | `low_score` (score 0, no keyword matched) | Borderline — an LLM-infrastructure story the current keyword set misses |
 
-Rejected items are still in the tape. If the user later says "actually include Apple releases", the reflection loop can recheck these exact items.
+Rejections stay in the tape. If the reflection loop later adds a keyword, these exact items can be re-evaluated against the new profile.
 
 ---
 
 ## ECHO question of the day
 
-> "Add 'Apple' as a keyword? (appeared in 2 items today, both rejected as low_fit)"
+> "2 of today's rejected items were LLM-infrastructure stories that scored 0 because `LLM` is not a keyword. Add `LLM` with weight 4 to the profile?"
 
-User answers: `no`.
+User answers: `yes`.
 
-Result: `Apple` is added to the negative list with weight 2; an `evolution` record is written; the profile version bumps from `v3` to `v4`.
+Result: an `evolution` record is appended to the tape, the keyword is added with `origin: echo`, and the profile version bumps. Tomorrow's prescreen will score these stories instead of dropping them silently.
 
 ---
 
 ## Status footer
 
 ```
-Sources scanned: 2
-Items prescreened: 12
-Rejected at prescreen: 6
-Verified by LLM: 6
-Pooled after dedup: 3
-Source health: all green
-Pipeline time: 4.2s
+Vertical:            tech
+Sources scanned:     50 items
+Items prescreened:   64
+Rejected:            43 (all low_score, prescreen gate)
+Pooled after dedup:  7
+Formatted:           7
+LLM calls:           0 (dry run)
+Profile version:     1 (loaded from config)
 ```
 
 ---
 
 ## Compare with a static RSS reader
 
-A static RSS reader would have shown all 12 items, including the sponsored post and the careers guide. A one-shot LLM summarizer might have missed the quantum story because it was not explicitly asked about it.
+A static RSS reader would have shown all 50+ items, including the hiring thread and the movie review. A one-shot LLM summarizer would give you no record of why anything was included or dropped.
 
-This engine reports 3 high-signal items, explains why each made it, and uses the rejections to get better tomorrow.
+This engine reports 7 items, stores the full decision chain for each — scan timestamp, exact matched terms and weights, review status, cluster assignment — and keeps the 43 rejections on the tape so tomorrow's profile can learn from them.
