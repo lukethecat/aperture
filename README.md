@@ -96,6 +96,7 @@ The script runs the pipeline in `--dry` mode, prints the latest daily report, an
 
 - **Understand the system** → [SKILL.md](SKILL.md) (start here)
 - **See the evidence** → [docs/sample-issue.md](docs/sample-issue.md)
+- **When is this the right tool?** → [docs/when-to-use-aperture.md](docs/when-to-use-aperture.md)
 - **Module-by-module advantages** → [docs/module-showcase.md](docs/module-showcase.md)
 - **Design rationale** → [DESIGN.md](DESIGN.md)
 - **Adapt it to your beat** → copy [config/example_vertical.toml](config/example_vertical.toml), edit sources, keywords, and negatives
