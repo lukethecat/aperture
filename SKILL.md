@@ -29,19 +29,21 @@ th { background: var(--code); }
 
 # Skill: Aperture
 
-> **TL;DR** — A deterministic news-curation skill: scan source front pages, diff them against yesterday, prescreen with a weighted profile, review with an LLM, deduplicate, publish, and evolve the profile from user feedback. All decisions go to an append-only tape.
+> **TL;DR** — A skill for AI agents that want to produce better daily reports and discover more of what their users actually want. Aperture scans source front pages, diffs them against yesterday, prescreens with a weighted profile, reviews with an LLM, deduplicates, publishes, and evolves the profile from user feedback. All decisions go to an append-only tape.
 
-This skill is **implementation-agnostic**. You can execute it with the included Python reference implementation, with your own code, or directly as an LLM agent pattern.
+This skill is **implementation-agnostic**. An agent can execute it by reading this file, by calling the included Python reference implementation, or by porting the patterns to its own runtime.
 
 ---
 
 ## 1. Purpose
 
-Replace static RSS readers and one-shot LLM summarizers with a **self-evolving news pipeline** that:
+Give agents a deterministic, auditable news-curation skill that replaces static RSS readers and one-shot LLM summarizers:
 
-1. Treats "reading the front page" as a first-class operation (not just feed polling).
-2. Records every decision in an append-only log (the **tape**) for audit and replay.
-3. Updates its own taste through explicit user feedback (the **reflection loop**).
+1. **Scan the front page** — treat "reading the front page" as a first-class operation, not just feed polling.
+2. **Tape every decision** — record every source snapshot, item, rejection reason, profile version, and report in an append-only log for audit and replay.
+3. **Learn from user feedback** — update the agent's taste through explicit feedback and keep every change versioned and reversible.
+
+When an agent runs this skill, it can answer "why was this selected?" and "what would have been different yesterday?" from the tape.
 
 ---
 

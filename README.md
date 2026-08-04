@@ -95,10 +95,12 @@ The script runs the pipeline in `--dry` mode, prints the latest daily report, an
 ## Dig deeper
 
 - **Understand the system** → [SKILL.md](SKILL.md) (start here)
+- **Install as an agent skill** → [docs/installing-for-agents.md](docs/installing-for-agents.md)
 - **See the evidence** → [docs/sample-issue.md](docs/sample-issue.md)
 - **When is this the right tool?** → [docs/when-to-use-aperture.md](docs/when-to-use-aperture.md)
 - **Module-by-module advantages** → [docs/module-showcase.md](docs/module-showcase.md)
 - **Design rationale** → [DESIGN.md](DESIGN.md)
+- **Replay any decision** → `python scripts/replay.py --item <id>`
 - **Adapt it to your beat** → copy [config/example_vertical.toml](config/example_vertical.toml), edit sources, keywords, and negatives
 
 <details>
@@ -106,14 +108,19 @@ The script runs the pipeline in `--dry` mode, prints the latest daily report, an
 
 ```
 aperture/
-├── SKILL.md        # primary skill specification
-├── agent_runner.py # LLM-agent orchestration demo
-├── DESIGN.md       # design rationale
-├── engine/         # deterministic reference implementation
-├── config/         # example vertical configs
-├── assets/         # logo, banner, social card, one-sheet, demo screenshot
-├── docs/           # deep dives, sample issue, analysis
-└── tests/          # offline smoke tests
+├── SKILL.md                 # primary skill specification
+├── agent_runner.py          # LLM-agent orchestration demo
+├── scripts/
+│   ├── demo_60s.py          # 60-second demo
+│   ├── replay.py            # replay any item's decision chain
+│   ├── harness_*.py         # harness tests for sample issue / demo / agent
+│   └── render_demo_screenshot.py
+├── DESIGN.md                # design rationale
+├── engine/                  # deterministic reference implementation
+├── config/                  # example vertical configs
+├── assets/                  # logo, banner, social card, one-sheet, demo screenshot
+├── docs/                    # deep dives, sample issue, install guides
+└── tests/                   # offline smoke tests
 ```
 
 </details>
