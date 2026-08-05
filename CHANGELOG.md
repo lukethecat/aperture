@@ -20,5 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/installing-for-agents.md` with platform-specific install steps (OpenClaw, Raft, Hermes, Claude Code, Codex, generic shell agent).
 - `docs/when-to-use-aperture.md` usage guide with honest reverse checklist and decision tree.
 - Sample issue at `docs/sample-issue.md` generated from real tape output.
+- Configurable prescreen `threshold` per vertical (default: 2).
 
 [0.1.0]: https://github.com/lukethecat/aperture/releases/tag/v0.1.0

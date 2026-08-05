@@ -40,6 +40,15 @@ python -m engine.pipeline --vertical tech --config config/example_vertical.toml
 
 Tell the agent to read `SKILL.md` first. It contains the full execution pattern.
 
+### Windows/Git Bash note
+
+If you see `UnicodeDecodeError: 'gbk' codec can't decode byte ...` while running the pipeline or `scripts/replay.py` on Windows with Git Bash, set the console encoding to UTF-8 before running Python:
+
+```bash
+export PYTHONIOENCODING=utf-8
+python -m engine.pipeline --dry --vertical tech --config config/example_vertical.toml
+```
+
 ---
 
 ## OpenClaw
