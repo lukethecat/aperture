@@ -16,14 +16,12 @@ python -m engine.pipeline --vertical tech --config config/example_vertical.toml
 
 Tests are offline: `python tests/test_smoke.py -v`
 
-## Try it in 60 seconds
+## Replay a decision
 
-No install, no API key — just Python:
+No API key needed:
 
 ```bash
-python scripts/demo_60s.py
+python scripts/replay.py --item d02fcce3d996 --vertical tech
 ```
 
-![60 second demo](../assets/demo-60s.png)
-
-The script runs the pipeline in `--dry` mode, prints the latest daily report, and exits. Every decision it shows is also written to `tape/tech.jsonl`.
+This reconstructs the full decision chain for one pooled item from `tape/sample-tech.jsonl`: when it was scanned, how the URL was normalized, which keywords fired, and why it made the pool.

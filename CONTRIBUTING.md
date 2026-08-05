@@ -36,6 +36,19 @@ python -c "import pathlib, sys; bad=[p for p in pathlib.Path('.').rglob('*') if 
 - Bundling real news sources that cannot be publicly scraped or that introduce legal/policy risk.
 - Mutating tape records. The tape is append-only.
 
+## Pre-push checklist for this public repo
+
+Before pushing to `main` or opening a PR, run through this list:
+
+1. **No internal identifiers.** Grep for names, machine paths, internal project names, or anything that identifies people or infrastructure:
+   ```bash
+   grep -RniE '(slock|raft|kimi-code|self-evolving-news-engine|C:\\Users|/Users/|github-dev)' --exclude-dir=.git --exclude-dir=__pycache__ .
+   ```
+2. **Every file earns its place.** Ask for each new file: "Is this part of the skill's public contract?" Keep only: `SKILL.md`, reference implementation (`engine/`), sample configs, tests/harness, and user-facing docs.
+3. **No work-in-progress drafts on `main`.** Analysis prompts, naming debates, release-note drafts, and marketing copy belong in PRs, issues, or local notes — not in the public tree.
+4. **No real runtime data in git.** `tape/` is ignored except for `tape/sample-tech.jsonl`. Do not commit production tape files or report outputs.
+5. **No real secrets.** All API key examples must use placeholders like `sk-...`. Never commit a real token, password, or private URL.
+
 ## Questions?
 
 Open a discussion issue or comment on an existing one.

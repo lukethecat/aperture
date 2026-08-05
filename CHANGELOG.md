@@ -16,7 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ECHO proactive clarification layer.
 - `--dry` rule-only mode: runs without any LLM API key.
 - `scripts/replay.py` to replay any item's full decision chain (`--item`, `--why`).
-- `agent_runner.py` LLM-agent orchestration demo.
 - `docs/installing-for-agents.md` with platform-specific install steps (OpenClaw, Raft, Hermes, Claude Code, Codex, generic shell agent).
 - `docs/when-to-use-aperture.md` usage guide with honest reverse checklist and decision tree.
 - Sample issue at `docs/sample-issue.md` generated from real tape output.

@@ -20,16 +20,13 @@ Real output, not a mockup: [daily issue, 2026-08-05](docs/issues/2026-08-05.md) 
 ```
 aperture/
 ├── SKILL.md                 # primary skill specification
-├── agent_runner.py          # LLM-agent orchestration demo
 ├── scripts/
-│   ├── demo_60s.py          # 60-second demo
 │   ├── replay.py            # replay any item's decision chain
-│   ├── harness_*.py         # harness tests for sample issue / demo / agent
-│   └── render_demo_screenshot.py
+│   └── harness_*.py         # harness tests for sample issue / window / echo
 ├── DESIGN.md                # design rationale
 ├── engine/                  # deterministic reference implementation
 ├── config/                  # example vertical configs
-├── assets/                  # logo, banner, social card, one-sheet, demo screenshot
+├── assets/                  # logo, banner, social card, one-sheet
 ├── docs/                    # deep dives, sample issue, install guides
 └── tests/                   # offline smoke tests
 ```
@@ -40,7 +37,7 @@ aperture/
 
 - [Why Aperture](docs/why-aperture.md) — the problem with stateless news tools, and what changes
 - [How it works](docs/how-it-works.md) — pipeline, tape, and the implementation-agnostic spec
-- [Quick start](docs/quickstart.md) — dry run with zero keys, full pipeline, 60-second demo
+- [Quick start](docs/quickstart.md) — dry run with zero keys, full pipeline, replay a decision
 
 ---
 
