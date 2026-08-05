@@ -1,0 +1,26 @@
+{
+  "id": "aperture",
+  "name": "Aperture",
+  "description": "A skill for AI agents that curate better daily reports. Scans source front pages, diffs them against yesterday, prescreens with a weighted profile, reviews with an LLM, deduplicates, publishes, and evolves the profile from user feedback. All decisions are append-only to a tape for audit and replay.",
+  "version": "0.1.0",
+  "skills": ["./"],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "APERTURE_LLM_API_KEY": {
+        "type": "string",
+        "description": "API key for the OpenAI-compatible LLM provider used in the review stage. Optional; the pipeline runs in rule-only dry mode without it.",
+        "sensitive": true
+      },
+      "APERTURE_LLM_BASE_URL": {
+        "type": "string",
+        "description": "Base URL for the OpenAI-compatible LLM provider. Optional; defaults to the provider's standard endpoint."
+      },
+      "APERTURE_LLM_MODEL": {
+        "type": "string",
+        "description": "Model name for review. Optional; defaults to a sensible provider model."
+      }
+    },
+    "required": []
+  }
+}

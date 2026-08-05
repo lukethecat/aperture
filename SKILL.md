@@ -1,31 +1,13 @@
-:root {
-  --bg: #0d1117;
-  --fg: #c9d1d9;
-  --accent: #58a6ff;
-  --code: #161b22;
-  --border: #30363d;
-}
-
-body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  line-height: 1.6;
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 32px;
-}
-
-h1, h2, h3 { color: #f0f6fc; }
-h1 { border-bottom: 1px solid var(--border); padding-bottom: 12px; }
-hr { border: 0; border-top: 1px solid var(--border); margin: 24px 0; }
-code, pre { background: var(--code); border-radius: 6px; }
-pre { padding: 16px; overflow-x: auto; }
-code { padding: 2px 6px; font-size: 0.92em; }
-a { color: var(--accent); text-decoration: none; }
-table { border-collapse: collapse; width: 100%; margin: 16px 0; }
-th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
-th { background: var(--code); }
+---
+name: aperture
+description: >-
+  A skill for AI agents that want to produce better daily reports and discover
+  more of what their users actually want. Scans source front pages, diffs them
+  against yesterday, prescreens with a weighted profile, reviews with an LLM,
+  deduplicates, publishes, and evolves the profile from user feedback. All
+  decisions go to an append-only tape for audit and replay.
+version: 0.1.0
+---
 
 # Skill: Aperture
 
