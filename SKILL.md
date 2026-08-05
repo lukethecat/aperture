@@ -184,17 +184,17 @@ score = sum(matched keyword weights)
 
 ## 5. Source-acquisition taxonomy
 
-A source can be acquired in five ways. The engine treats them uniformly once they reach the tape.
+A source can be acquired in five ways. The engine treats them uniformly once they reach the tape. The report's source registry renders each source as `status [name](url) · method` so a reader can see at a glance how the source is acquired.
 
-| Type | Mechanism | When to use |
-|------|-----------|-------------|
-| **pull** | RSS/API/curl on cron | Stable feeds and APIs |
-| **scan** | Frontpage diff + prescreen | SPAs, irregular sites, human-fed links |
-| **push** | Webhook/SSE/bridge | Internal alerts or closed ecosystems |
-| **search** | Ad-hoc search | New-source discovery or major-event catch-up |
-| **human-feed** | User drops a link | Exclusive tips and first-hand signals |
+| Type | Mechanism | When to use | Registry display |
+|------|-----------|-------------|------------------|
+| **pull** | RSS/API/curl on cron | Stable feeds and APIs | `🟢 [Hacker News](https://news.ycombinator.com/rss) · pull` |
+| **scan** | Frontpage diff + prescreen | SPAs, irregular sites | `🟢 [TechCrunch](https://techcrunch.com) · scan` |
+| **push** | Webhook/SSE/bridge | Internal alerts or closed ecosystems | `🟢 [Internal Alerts](...) · push` |
+| **search** | Ad-hoc search | New-source discovery or major-event catch-up | `🟢 [Search](...) · search` |
+| **human-feed** | User drops a link | Exclusive tips and first-hand signals | `🟢 Weixin Tip · human-feed` |
 
-Add a source by registering `{id, name, list_url, extract_profile}` in the vertical config.
+Add a source by registering `{id, name, list_url, extract_profile}` in the vertical config. A human-feed source sets `extract_profile = { method = "human_feed" }` and may omit `list_url`.
 
 ---
 
@@ -270,6 +270,12 @@ loop auditable.
 1. **prepare** — after `publish`, generate today's clarification questions from
    the pooled items and write them to the tape as `echo_question` records with
    `status: pending`. Expire any unanswered questions from the previous day first.
+   Human-feed items additionally trigger a source-proposal question:
+   "Add '<source name>' as a tracked source?"  If the sample URL is on
+   `mp.weixin.qq.com`, the question notes that Weixin is a closed platform and
+   that expansion research is needed. A positive answer records a `source_proposal`
+   tape entry; it does **not** automatically register the source (owner confirmation
+   is required).
 2. **deliver** — the cron/delivery layer reads pending questions, posts them
    alongside the report, and marks them `delivered`. No generation happens here;
    the layer is pure read + mark.

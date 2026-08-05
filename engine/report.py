@@ -139,6 +139,25 @@ def _format_timing_footer(timings: Dict[str, float]) -> str:
     return f"Total: {total:.1f}s ({parts})"
 
 
+def _source_acquisition_badge(extract_profile: Dict[str, Any], list_url: str) -> str:
+    """
+    Map extraction method to acquisition taxonomy badge.
+
+    Mapping:
+      - rss / json_api      -> pull
+      - generic_links / regex -> scan
+      - human_feed or no list_url -> human-feed
+    """
+    method = (extract_profile or {}).get("method", "")
+    if method in ("rss", "json_api"):
+        return "pull"
+    if method in ("generic_links", "regex"):
+        return "scan"
+    if method == "human_feed" or not list_url:
+        return "human-feed"
+    return "scan"
+
+
 def generate_report(vertical: str,
                     timings: Dict[str, float] = None,
                     use_llm: bool = True) -> Dict[str, Any]:
@@ -229,7 +248,14 @@ def generate_report(vertical: str,
         health = s.get("health", {})
         fails = health.get("fail_count", 0)
         status = "🟢" if fails == 0 else "🔴"
-        lines.append(f"- {status} {s.get('name', sid)} — {s.get('list_url', '')}")
+        name = s.get("name", sid)
+        list_url = s.get("list_url", "")
+        badge = _source_acquisition_badge(s.get("extract_profile", {}), list_url)
+        if list_url:
+            name_link = f"[{name}]({list_url})"
+        else:
+            name_link = name
+        lines.append(f"- {status} {name_link} · {badge}")
 
     body = "\n".join(lines)
 

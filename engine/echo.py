@@ -16,6 +16,7 @@ channel-specific delivery mechanism.
 import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 from . import tape
 from .profile import get_profile, update_profile
@@ -82,6 +83,99 @@ def _profile_terms(vertical: str) -> set:
     terms = {kw["term"].lower() for kw in profile.get("keywords", [])}
     terms.update({n["term"].lower() for n in profile.get("negatives", [])})
     return terms
+
+
+def _is_human_feed_source(source: Dict[str, Any]) -> bool:
+    """Human-feed sources are identified by method or by having no list_url."""
+    profile = source.get("extract_profile", {})
+    method = profile.get("method", "") if isinstance(profile, dict) else ""
+    if method == "human_feed":
+        return True
+    if not source.get("list_url"):
+        return True
+    return False
+
+
+def _is_weixin_url(url: str) -> bool:
+    """Detect Weixin closed-platform articles."""
+    try:
+        return urlparse(url).netloc.lower() == "mp.weixin.qq.com"
+    except Exception:
+        return False
+
+
+def _human_feed_sources(vertical: str) -> Dict[str, Dict[str, Any]]:
+    """Return human-feed source records keyed by source id."""
+    sources = {}
+    for s in tape.query(vertical, type="source"):
+        sid = s.get("id")
+        if sid and _is_human_feed_source(s):
+            sources[sid] = s
+    return sources
+
+
+def _source_proposal_questions_for_today(
+    vertical: str,
+    items: List[Dict[str, Any]],
+    remaining: int,
+) -> List[Dict[str, Any]]:
+    """
+    Generate source-proposal questions for human-feed sources seen today.
+
+    Each human-feed source with items today gets at most one question:
+    "Add '<source name>' as a tracked source?"  Evidence is the list of
+    URLs fed from that source. Weixin URLs trigger a closed-platform note.
+    """
+    if remaining <= 0:
+        return []
+
+    hf_sources = _human_feed_sources(vertical)
+    if not hf_sources:
+        return []
+
+    today = _today()
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    for item in items:
+        sid = item.get("source_id")
+        if sid in hf_sources:
+            grouped.setdefault(sid, []).append(item)
+
+    questions: List[Dict[str, Any]] = []
+    for sid in sorted(grouped):
+        if len(questions) >= remaining:
+            break
+        source = hf_sources[sid]
+        source_items = grouped[sid]
+        evidence_urls = [item.get("url", "") for item in source_items if item.get("url")]
+        source_name = source.get("name", sid)
+        weixin = any(_is_weixin_url(u) for u in evidence_urls)
+
+        text = f"Add '{source_name}' as a tracked source?"
+        if weixin:
+            text += " (Weixin is a closed platform; expansion research needed.)"
+
+        question = {
+            "id": f"echo-{today}-source-{sid}-{datetime.now(timezone.utc).isoformat()}",
+            "type": "echo_question",
+            "kind": "source_proposal",
+            "vertical": vertical,
+            "date": today,
+            "topic": source_name,
+            "question": text,
+            "evidence": {"count": len(source_items), "urls": evidence_urls},
+            "answerable_in_one_word": True,
+            "status": "pending",
+            "proposed_source": {
+                "id": sid,
+                "name": source_name,
+                "sample_url": evidence_urls[0] if evidence_urls else "",
+                "weixin": weixin,
+            },
+        }
+        tape.append(vertical, question)
+        questions.append(question)
+
+    return questions
 
 
 def _questions_for_date(vertical: str, date: str) -> List[Dict[str, Any]]:
@@ -178,6 +272,14 @@ def prepare(vertical: str,
         _save_echo_state(vertical, state)
         return []
 
+    questions: List[Dict[str, Any]] = []
+    remaining = max_questions - state.get("daily_count", 0)
+
+    # Source-proposal questions from human-feed sources take priority.
+    source_questions = _source_proposal_questions_for_today(vertical, items, remaining)
+    questions.extend(source_questions)
+    remaining -= len(source_questions)
+
     existing_terms = _profile_terms(vertical)
     topic_counts = _extract_candidate_topics(items)
     candidate_topics = [
@@ -186,8 +288,6 @@ def prepare(vertical: str,
     ]
     candidate_topics.sort(key=lambda x: -x[1])
 
-    questions: List[Dict[str, Any]] = []
-    remaining = max_questions - state.get("daily_count", 0)
     for topic, count in candidate_topics[:remaining]:
         evidence_items = [
             item for item in items
@@ -292,6 +392,12 @@ def apply_answer(question_id: str, vertical: str, answer: str) -> Dict[str, Any]
         return {"status": "silenced", "message": "ECHO silenced. Send 'echo on' to re-enable."}
 
     topic = question.get("topic", "")
+
+    # Source-proposal questions never auto-register a source; they create a
+    # proposal record for owner confirmation instead.
+    if question.get("kind") == "source_proposal":
+        return _apply_source_proposal_answer(question, vertical, answer, answer_lower)
+
     ops: List[Dict[str, Any]] = []
     if answer_lower in positive:
         ops.append({"op": "add_keyword", "term": topic, "weight": 3})
@@ -327,6 +433,78 @@ def apply_answer(question_id: str, vertical: str, answer: str) -> Dict[str, Any]
         "status": "applied",
         "message": f"Profile updated v{old_profile['version']} -> v{new_profile['version']}",
         "ops": ops,
+    }
+
+
+def _apply_source_proposal_answer(
+    question: Dict[str, Any],
+    vertical: str,
+    answer: str,
+    answer_lower: str,
+) -> Dict[str, Any]:
+    """Handle yes/no answers to source-proposal questions."""
+    positive = {"yes", "y", "sure", "add", "more", "ok"}
+    negative = {"no", "n", "skip", "less", "never"}
+
+    if answer_lower not in positive and answer_lower not in negative:
+        return {"status": "unrecognized", "message": "Please answer yes/no/skip/silence"}
+
+    accepted = answer_lower in positive
+    proposed = question.get("proposed_source", {})
+    weixin = proposed.get("weixin", False)
+
+    tape.append(
+        vertical,
+        {
+            "type": "source_proposal",
+            "vertical": vertical,
+            "date": _today(),
+            "accepted": accepted,
+            "source": proposed,
+            "answer": answer,
+            "weixin": weixin,
+        },
+    )
+
+    # Reset ignored counter on engagement and mark question answered.
+    state = _load_echo_state(vertical)
+    state["consecutive_ignored"] = 0
+    _save_echo_state(vertical, state)
+
+    question["status"] = "answered"
+    question["ts"] = datetime.now(timezone.utc).isoformat()
+    tape.append(vertical, question)
+
+    tape.append(
+        vertical,
+        {
+            "type": "echo_answer",
+            "vertical": vertical,
+            "question_id": question.get("id", ""),
+            "answer": answer,
+            "applied_ops": [],
+            "source_proposal": True,
+        },
+    )
+
+    if accepted:
+        message = (
+            f"Source proposal recorded for '{proposed.get('name', '')}'. "
+            "A registered source requires owner confirmation."
+        )
+        if weixin:
+            message += " Weixin closed-platform expansion research needed. @Cindy please create a backup-channel research task."
+        return {
+            "status": "source_proposal",
+            "message": message,
+            "notify_channel": weixin,
+            "proposal": proposed,
+        }
+
+    return {
+        "status": "source_proposal_declined",
+        "message": f"Source proposal for '{proposed.get('name', '')}' declined.",
+        "proposal": proposed,
     }
 
 
