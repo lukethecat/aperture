@@ -12,18 +12,22 @@ from . import tape
 from .verifier import call_llm, get_llm_provider
 
 
-def _format_simple_report(vertical: str, today: str, items: List[Dict[str, Any]]) -> str:
+def _format_simple_report(vertical: str, today: str, items: List[Dict[str, Any]],
+                          summary: str = "") -> str:
     """Fallback formatter when no LLM provider is available."""
     lines = [f"# Daily Report {today} ({vertical})", ""]
+    if summary:
+        lines.append(f"> **Editor's note**: {summary}")
+        lines.append("")
     for idx, item in enumerate(items, 1):
         title = item.get("title", "")
         url = item.get("url", "")
         source = item.get("source_name", "")
-        summary = item.get("summary", "")
+        item_summary = item.get("summary", "")
         score = item.get("scores", {}).get("prescreen", 0)
         lines.append(f"{idx}. {title}")
-        if summary:
-            lines.append(f"   Summary: {summary}")
+        if item_summary:
+            lines.append(f"   Summary: {item_summary}")
         if source:
             lines.append(f"   Source: {source}")
         if url:
@@ -33,7 +37,8 @@ def _format_simple_report(vertical: str, today: str, items: List[Dict[str, Any]]
     return "\n".join(lines)
 
 
-def _format_llm_report(vertical: str, today: str, items: List[Dict[str, Any]]) -> str:
+def _format_llm_report(vertical: str, today: str, items: List[Dict[str, Any]],
+                       summary: str = "") -> str:
     """Use the configured LLM provider to format the report."""
     if not items:
         return f"# Daily Report {today} ({vertical})\n\nNo items today."
@@ -51,6 +56,7 @@ def _format_llm_report(vertical: str, today: str, items: List[Dict[str, Any]]) -
     prompt = (
         "You are a news editor. Turn the following items into a concise daily report. "
         "Group related items. Output plain Markdown with sections.\n\n"
+        f"Editor's note (include at the top as a short paragraph): {summary}\n\n"
         f"Items:\n{json.dumps(prompt_items, ensure_ascii=False, indent=1)}"
     )
     result = call_llm(prompt)
@@ -58,7 +64,79 @@ def _format_llm_report(vertical: str, today: str, items: List[Dict[str, Any]]) -
         return result
     if result and isinstance(result, dict) and "report" in result:
         return result["report"]
-    return _format_simple_report(vertical, today, items)
+    return _format_simple_report(vertical, today, items, summary)
+
+
+def _generate_summary(items: List[Dict[str, Any]], use_llm: bool = False) -> str:
+    """
+    Generate a 100-300 character daily summary of the pooled items.
+    Falls back to a rule-based summary when no LLM is available.
+    """
+    if not items:
+        return "No frontier items made the cut today."
+
+    if use_llm:
+        provider = get_llm_provider()
+        if provider:
+            titles = [i.get("title", "") for i in items]
+            prompt = (
+                "Summarize the following AI-news headlines in one concise paragraph "
+                "(100-300 characters) describing the day's main thread. Be plain, no hype.\n\n"
+                "Headlines:\n" + "\n".join(f"- {t}" for t in titles)
+            )
+            result = call_llm(prompt)
+            if result and isinstance(result, str):
+                summary = result.strip().strip('"').strip("'")
+                if 50 <= len(summary) <= 600:
+                    return summary
+            if result and isinstance(result, dict) and "summary" in result:
+                summary = str(result["summary"]).strip()
+                if 50 <= len(summary) <= 600:
+                    return summary
+
+    # Rule-based fallback: cluster by matched categories and keywords.
+    category_counts: Dict[str, int] = {}
+    keyword_weights: Dict[str, int] = {}
+    for item in items:
+        for cat in item.get("scores", {}).get("matched_categories", []):
+            name = cat.get("category", "")
+            if name:
+                category_counts[name] = category_counts.get(name, 0) + 1
+        for kw in item.get("scores", {}).get("matched_keywords", []):
+            term = kw.get("term", "")
+            weight = kw.get("weight", 0)
+            if term:
+                keyword_weights[term] = keyword_weights.get(term, 0) + weight
+
+    top_cats = sorted(category_counts, key=lambda k: category_counts[k], reverse=True)[:3]
+    top_kws = sorted(keyword_weights, key=lambda k: keyword_weights[k], reverse=True)[:3]
+
+    themes = []
+    if top_cats:
+        themes.extend(top_cats)
+    if len(top_kws) > len(top_cats):
+        for kw in top_kws:
+            if kw not in themes:
+                themes.append(kw)
+    themes = themes[:3]
+
+    if not themes:
+        return f"Today {len(items)} items made the cut across the frontier landscape."
+
+    theme_text = ", ".join(themes)
+    return (
+        f"Today {len(items)} items made the cut, centered on {theme_text}. "
+        f"The frontier continues to move on multiple fronts at once."
+    )
+
+
+def _format_timing_footer(timings: Dict[str, float]) -> str:
+    """Render a compact timing footer."""
+    if not timings:
+        return ""
+    total = sum(timings.values())
+    parts = ", ".join(f"{stage}: {t:.1f}s" for stage, t in timings.items())
+    return f"Total: {total:.1f}s ({parts})"
 
 
 def generate_report(vertical: str,
@@ -91,10 +169,11 @@ def generate_report(vertical: str,
         }
 
     provider = get_llm_provider()
+    summary = _generate_summary(today_items, use_llm=use_llm and provider is not None)
     if use_llm and provider:
-        body = _format_llm_report(vertical, today, today_items)
+        body = _format_llm_report(vertical, today, today_items, summary=summary)
     else:
-        body = _format_simple_report(vertical, today, today_items)
+        body = _format_simple_report(vertical, today, today_items, summary=summary)
 
     # Status footer
     lines = body.splitlines()
@@ -132,8 +211,7 @@ def generate_report(vertical: str,
     )
 
     if timings:
-        for stage, t in timings.items():
-            lines.append(f"- {stage}: {t:.1f}s")
+        lines.append(f"- {_format_timing_footer(timings)}")
 
     alerts = [
         f"{s['name']}({s['health']['fail_count']} fails)"
@@ -142,6 +220,16 @@ def generate_report(vertical: str,
     ]
     if alerts:
         lines.append(f"- Alerts: {', '.join(alerts)}")
+
+    # Source registry
+    lines.append("")
+    lines.append("## Source registry")
+    for sid in sorted(source_map):
+        s = source_map[sid]
+        health = s.get("health", {})
+        fails = health.get("fail_count", 0)
+        status = "🟢" if fails == 0 else "🔴"
+        lines.append(f"- {status} {s.get('name', sid)} — {s.get('list_url', '')}")
 
     body = "\n".join(lines)
 
