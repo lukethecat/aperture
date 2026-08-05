@@ -6,10 +6,27 @@ configured, it may be used for formatting; otherwise a simple structured report
 is emitted. The report is written to stdout/files and recorded on the tape.
 """
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 from . import tape
 from .verifier import call_llm, get_llm_provider
+
+
+def _is_human_feed_source(source: Dict[str, Any]) -> bool:
+    """Return True if the source is configured as human-feed."""
+    profile = source.get("extract_profile", {})
+    if not isinstance(profile, dict):
+        return False
+    return profile.get("method", "") == "human_feed"
+
+
+def _human_feed_sources_with_items_today(vertical: str, today: str) -> Set[str]:
+    """Return human-feed source ids that have at least one item today."""
+    active: Set[str] = set()
+    for item in tape.query(vertical, type="item"):
+        if item.get("ts", "").startswith(today):
+            active.add(item.get("source_id", ""))
+    return active
 
 
 def _format_simple_report(vertical: str, today: str, items: List[Dict[str, Any]],
@@ -243,11 +260,22 @@ def generate_report(vertical: str,
     # Source registry
     lines.append("")
     lines.append("## Source registry")
+    hf_active_today = _human_feed_sources_with_items_today(vertical, today)
     for sid in sorted(source_map):
         s = source_map[sid]
         health = s.get("health", {})
         fails = health.get("fail_count", 0)
-        status = "🟢" if fails == 0 else "🔴"
+        is_hf = _is_human_feed_source(s)
+
+        if fails > 0:
+            status = "🔴"
+        elif is_hf and sid not in hf_active_today:
+            # Human-feed sources that are healthy but contributed nothing today
+            # show a standby indicator rather than a false "active" green.
+            status = "⚪"
+        else:
+            status = "🟢"
+
         name = s.get("name", sid)
         list_url = s.get("list_url", "")
         badge = _source_acquisition_badge(s.get("extract_profile", {}), list_url)
