@@ -1,0 +1,16 @@
+{
+  "name": "@lukethecat/aperture",
+  "version": "0.1.0",
+  "description": "A skill for AI agents that curate better daily reports.",
+  "type": "module",
+  "openclaw": {
+    "extensions": ["./SKILL.md"],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24-beta.2",
+      "pluginSdkVersion": "2026.3.24-beta.2"
+    }
+  }
+}
