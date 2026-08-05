@@ -1,12 +1,18 @@
-# Aperture
+<div align="center">
 
-![Aperture one-sheet](assets/one-sheet.png)
+# aperture
 
-[![CI](https://github.com/lukethecat/aperture/actions/workflows/ci.yml/badge.svg)](https://github.com/lukethecat/aperture/actions/workflows/ci.yml)
+_your agent's daily front page — reads the news like a human, shows you the tape_
 
-A self-evolving news engine that reads front pages like a human — and can show you the tape for every decision it makes.
+[![CI](https://img.shields.io/github/actions/workflow/status/lukethecat/aperture/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/lukethecat/aperture/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/lukethecat/aperture?style=flat-square)](LICENSE)
+[![v0.1.0](https://img.shields.io/github/v/release/lukethecat/aperture?style=flat-square)](https://github.com/lukethecat/aperture/releases)
 
-Real output, not a mockup: [daily issue, 2026-08-05](docs/issues/2026-08-05.md) — every selection is backed by an append-only tape record.
+[📄 Real issue · 2026-08-05 →](docs/issues/2026-08-05.md) · [Install](docs/installing-for-agents.md) · [Docs](docs/how-it-works.md)
+
+</div>
+
+Aperture is a skill for AI agents that curate better daily reports. It scans source front pages, diffs them against yesterday, prescreens with a weighted profile, reviews with an LLM, deduplicates, publishes, and learns from feedback. Every decision goes to an append-only tape for audit and replay.
 
 1. **Scan front pages like a human.** Aperture diffs each source's front page against yesterday's, instead of trusting unreliable feed timestamps.
 2. **Tape every decision.** Scans, scores, rejections, profile changes — all append-only JSONL. Ask *"why was #14 cut?"* and the tape answers.
@@ -26,7 +32,6 @@ aperture/
 ├── DESIGN.md                # design rationale
 ├── engine/                  # deterministic reference implementation
 ├── config/                  # example vertical configs
-├── assets/                  # logo, banner, social card, one-sheet
 ├── docs/                    # deep dives, sample issue, install guides
 └── tests/                   # offline smoke tests
 ```
