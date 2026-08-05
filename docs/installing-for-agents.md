@@ -12,7 +12,6 @@ After installation, the agent can:
 
 - Run `python -m engine.pipeline --dry --vertical tech` to produce a rule-only daily report.
 - Read `SKILL.md` as the canonical execution spec.
-- Use `agent_runner.py` as an agent-orchestrated loop that decides collect → edit → review → publish stages.
 - Use `scripts/replay.py --item <id>` or `scripts/replay.py --why <url>` to answer "why was this selected?"
 
 ---
@@ -93,7 +92,7 @@ git clone https://github.com/lukethecat/aperture.git skills/aperture
 
 Point the agent at `skills/aperture/SKILL.md` as a loaded skill. The agent can then:
 
-- Run `python skills/aperture/agent_runner.py --dry --vertical tech` for an agent-orchestrated loop.
+- Run `cd skills/aperture && python -m engine.pipeline --dry --vertical tech --config config/example_vertical.toml` for a deterministic dry run.
 - Run `python skills/aperture/scripts/replay.py --item <id>` to inspect decisions.
 
 ---
@@ -159,7 +158,7 @@ git clone https://github.com/lukethecat/aperture.git ~/.codex/skills/aperture
 The agent will read `~/.codex/skills/aperture/SKILL.md` and can execute:
 
 ```bash
-python ~/.codex/skills/aperture/agent_runner.py --dry --vertical tech
+cd ~/.codex/skills/aperture && python -m engine.pipeline --dry --vertical tech --config config/example_vertical.toml
 ```
 
 ---

@@ -22,7 +22,7 @@ Aperture is different: it remembers everything, learns from your feedback, and c
 2. **Tape everything.** Every source snapshot, item, rejection reason, profile version, and report goes into an append-only JSONL tape. Nothing is silently dropped: rejected items are fuel for calibration. Ask *"why was #14 cut?"* — the tape answers.
 3. **Learn from feedback, reversibly.** "More AI safety, fewer sponsored posts" becomes versioned profile operations — not a re-prompt. Roll back any change and replay what would have been filtered.
 
-Aperture is also AI-native: [SKILL.md](../SKILL.md) is the primary spec, executable directly as an LLM-agent pattern, and [`agent_runner.py`](../agent_runner.py) is a working agent-orchestrated loop. And it degrades gracefully — `--dry` runs the whole pipeline on rules alone, no API key needed.
+Aperture is also AI-native: [SKILL.md](../SKILL.md) is the primary spec, executable directly as an LLM-agent pattern, and `python -m engine.pipeline` is the deterministic reference run loop. And it degrades gracefully — `--dry` runs the whole pipeline on rules alone, no API key needed.
 
 ## See it
 
