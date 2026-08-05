@@ -1,6 +1,31 @@
-# Sample Issue — Tech Vertical, 2026-08-04
+# Sample Issue — Aperture Daily Report
 
-This page is **not mock data**. It is rendered from a real dry-run of the pipeline (`--dry` mode: prescreen and dedup run for real, the LLM review gate is stubbed — `verify.llm_called=false` on every item). Every selection and rejection below is backed by an append-only record in [`tape/sample-tech.jsonl`](../tape/sample-tech.jsonl); you can replay the run end to end from that file.
+## Latest real issue
+
+Aperture dogfoods its own `ai-frontier` vertical every day. The latest real daily issue is here:
+
+**→ [docs/issues/2026-08-05.md](issues/2026-08-05.md)** — English sources, Chinese report.
+
+Older issues live in [`docs/issues/`](issues/).
+
+---
+
+## What you are looking at
+
+Aperture's daily reports are not summaries of summaries. Each item carries its full decision chain:
+
+1. **Scan** — when the URL first appeared on the source front page / feed.
+2. **Prescreen** — which keywords, categories, and negatives fired and the exact score.
+3. **Review** — LLM verification result (or dry-run stub if no provider is configured).
+4. **Dedup / cluster** — whether the item was merged with a near-duplicate and why.
+
+Every stage is append-only to the vertical's `tape/*.jsonl`. You can replay any item with `scripts/replay.py --item <id>`.
+
+---
+
+## Illustrated example: tech vertical dry run
+
+The rest of this page shows a real dry-run of the `tech` vertical (`--dry` mode: prescreen and dedup run for real, the LLM review gate is stubbed — `verify.llm_called=false` on every item). Every selection and rejection below is backed by an append-only record in [`tape/sample-tech.jsonl`](../tape/sample-tech.jsonl); you can replay the run end to end from that file.
 
 > Run stats for this issue: 50 items scanned, 64 prescreened, 43 rejected, 7 pooled, 7 formatted.
 
