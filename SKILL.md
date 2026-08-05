@@ -228,6 +228,20 @@ python -m engine.pipeline --vertical tech --config config/example_vertical.toml
 python -c "from engine.feedback import apply_feedback; apply_feedback('More AI safety, fewer ads', 'tech')"
 ```
 
+After publishing, optionally run ECHO to ask the user up to two clarification questions:
+
+```python
+from engine.echo import ask
+
+questions = ask("tech")
+for q in questions:
+    print(q["question"])
+
+# Later, apply a one-word answer: yes / no / skip / silence
+from engine.echo import apply_answer
+apply_answer(question_id, "tech", "yes")
+```
+
 ---
 
 ## 8. ECHO — proactive clarification
@@ -235,6 +249,36 @@ python -c "from engine.feedback import apply_feedback; apply_feedback('More AI s
 ECHO is an optional proactive layer that asks the user up to two one-word
 clarification questions after each report. It turns passive readers into active
 profile trainers.
+
+ECHO is intentionally split into four stages with the tape as the boundary
+between each. This makes delivery failures safe to retry and makes the whole
+loop auditable.
+
+### Four-stage flow
+
+```
+┌─────────┐   ┌──────────┐   ┌─────────┐   ┌──────────┐
+│ prepare │ → │  deliver │ → │ ingest  │ → │ distill  │
+│(generate│   │(post to  │   │(record  │   │(apply to │
+│ questions│   │ channel) │   │ answer) │   │ profile) │
+└────┬────┘   └────┬─────┘   └────┬────┘   └────┬─────┘
+     │             │              │             │
+     └─────────────┴──────────────┴─────────────┘
+                    append-only TAPE
+```
+
+1. **prepare** — after `publish`, generate today's clarification questions from
+   the pooled items and write them to the tape as `echo_question` records with
+   `status: pending`. Expire any unanswered questions from the previous day first.
+2. **deliver** — the cron/delivery layer reads pending questions, posts them
+   alongside the report, and marks them `delivered`. No generation happens here;
+   the layer is pure read + mark.
+3. **ingest** — when the user replies, record the raw answer on the tape as an
+   `echo_raw_answer` record before any interpretation.
+4. **distill** — before the next run, read yesterday's `echo_raw_answer`
+   records, call `apply_answer`, and mark the questions `answered`. Any
+   `delivered` questions without a raw answer are marked `expired` and count
+   toward the ignored limit.
 
 ### Rules
 
@@ -252,29 +296,36 @@ profile trainers.
 - "Add 'quantum' as a keyword? (appeared in 3 items today)"
 - "Filter 'sponsored' as a negative? (appeared twice this week)"
 
-### Execution steps
+### Tape record types
 
-1. After `publish`, load today's pooled items.
-2. Extract frequent capitalized noun phrases that are not already in the profile.
-3. Filter for terms that appear at least twice.
-4. Check rate limits and silence state.
-5. Generate up to 2 questions, record them on the tape as `echo_question`.
-6. Present questions to the user; record answers as `echo_answer`.
-7. Apply positive answers as `add_keyword` and negative answers as
-   `add_negative`, then reset the ignored counter.
+| type | fields |
+|------|--------|
+| `echo_state` | `consecutive_ignored`, `silenced`, `last_prepare_date`, `daily_count` |
+| `echo_question` | `id`, `date`, `topic`, `question`, `evidence`, `status` (`pending`/`delivered`/`answered`/`expired`) |
+| `echo_delivery` | `date`, `question_ids`, `channel`, `message_id` |
+| `echo_raw_answer` | `date`, `question_id`, `answer_text` |
+| `echo_answer` | `question_id`, `answer`, `applied_ops`, `profile_version` |
 
 ### Reference API
 
 ```python
-from engine.echo import ask, apply_answer, enable
+from engine.echo import prepare, record_delivery, record_raw_answer, distill, apply_answer, enable
 
-questions = ask("tech")
-for q in questions:
-    print(q["question"])
+# 1. Prepare today's questions after publish.
+questions = prepare("tech")
 
-apply_answer(q["id"], "tech", "yes")   # adds topic as keyword
-apply_answer(q["id"], "tech", "no")    # adds topic as negative
-apply_answer(q["id"], "tech", "silence")  # permanently silences ECHO
+# 2. Deliver them (caller's responsibility to post to the channel).
+question_ids = [q["id"] for q in questions]
+record_delivery("tech", question_ids, channel="#daily", message_id="msg-123")
+
+# 3. Ingest a raw answer when the user replies.
+record_raw_answer("tech", question_ids[0], "yes")
+
+# 4. Distill answers into profile operations before the next run.
+distill("tech")
+
+# Re-enable after silence.
+enable("tech")
 ```
 
 ---
