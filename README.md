@@ -14,9 +14,19 @@ _your agent's daily front page — reads the news like a human, shows you the ta
 
 Aperture is a skill for AI agents that curate better daily reports. It scans source front pages, diffs them against yesterday, prescreens with a weighted profile, reviews with an LLM, deduplicates, publishes, and learns from feedback. Every decision goes to an append-only tape for audit and replay.
 
-1. **Scan front pages like a human.** Aperture diffs each source's front page against yesterday's, instead of trusting unreliable feed timestamps.
-2. **Tape every decision.** Scans, scores, rejections, profile changes — all append-only JSONL. Ask *"why was #14 cut?"* and the tape answers.
-3. **Learn from feedback.** "More AI safety, fewer sponsored posts" becomes versioned profile operations you can roll back and replay.
+## Highlights
+
+Control surfaces that make Aperture different from a static RSS aggregator:
+
+- **Scan — front pages, not just feeds.** Diffs each source's front page against yesterday and uses `missing_date_policy: include` for sites with no RSS. *Verified: Qwen Blog scan source; 36h window bug fixed after first live run.*
+- **Decide — tape every decision.** Scans, scores, rejections, and profile changes are append-only JSONL. `scripts/replay.py --item <id>` shows the full chain. *Verified: replay harness passes; you can ask why any item was cut.*
+- **Learn — feedback-driven profile evolution.** ECHO loop turns "more AI safety, fewer sponsored posts" into versioned profile operations that can be rolled back or replayed. *Verified: end-to-end ECHO harness passes.*
+- **Prove — source registry + bottom status.** Every issue ends with a registry showing pull / scan / human-feed sources and 🟢⚪🔴 health, plus a status bar tracing how the issue was produced. *Verified: today's issue shows Qwen scan and Owner Tips human-feed badges.*
+- **Stats — runtime funnel transparency.** Each issue exposes the full pipeline funnel (sources → scanned → prescreened → report) and timing per stage, so readers can see exactly how the front page was produced. *Verified: today's issue includes source/scanned/prescreened/report counts and stage durations.*
+
+## Real output
+
+Daily issues are committed to [`docs/issues/`](docs/issues/) as dogfooding evidence. The [latest issue →](docs/issues/2026-08-05.md) includes source registry status and tape references.
 
 ---
 
