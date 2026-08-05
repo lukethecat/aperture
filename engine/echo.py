@@ -25,6 +25,15 @@ MAX_QUESTIONS_PER_DAY = 2
 CONSECUTIVE_IGNORE_THRESHOLD = 3
 COOLDOWN_DAYS_AFTER_IGNORE = 3
 
+# Words that are too generic to be useful ECHO topic proposals.
+TOPIC_STOPWORDS = {
+    "the", "and", "for", "with", "from", "new", "open", "ai", "api", "ceo",
+    "announces", "releases", "launches", "introduces", "unveils", "says",
+    "report", "study", "paper", "blog", "post", "news", "update", "today",
+    "yesterday", "this", "that", "after", "before", "over", "into", "more",
+    "most", "first", "next", "last", "year", "years", "week", "month",
+}
+
 
 def _today() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -65,13 +74,33 @@ def _recent_pooled_items(vertical: str, days: int = 1) -> List[Dict[str, Any]]:
     ]
 
 
+def _is_valid_topic(text: str) -> bool:
+    """Return True if the candidate topic is not a stopword/fragment."""
+    words = text.lower().split()
+    if not words:
+        return False
+    # Filter single-word stopwords.
+    if len(words) == 1 and words[0] in TOPIC_STOPWORDS:
+        return False
+    # Filter phrases composed entirely of stopwords.
+    if all(w in TOPIC_STOPWORDS for w in words):
+        return False
+    return True
+
+
 def _extract_candidate_topics(items: List[Dict[str, Any]]) -> Dict[str, int]:
     """Extract frequent capitalized noun phrases that are not already keywords."""
     counts: Dict[str, int] = {}
     for item in items:
         title = item.get("title", "")
-        for word in re.findall(r'[A-Z][a-zA-Z]{2,}', title):
-            counts[word] = counts.get(word, 0) + 1
+        # Prefer multi-word capitalized phrases (e.g. "Open Source", "Machine Learning").
+        for phrase in re.findall(r"\b[A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)+\b", title):
+            if _is_valid_topic(phrase):
+                counts[phrase] = counts.get(phrase, 0) + 1
+        # Single capitalized words (e.g. "OpenAI").
+        for word in re.findall(r"\b[A-Z][a-zA-Z]{2,}\b", title):
+            if _is_valid_topic(word):
+                counts[word] = counts.get(word, 0) + 1
     return counts
 
 
@@ -104,6 +133,30 @@ def _is_weixin_url(url: str) -> bool:
         return False
 
 
+def _media_identifier(url: str) -> tuple:
+    """
+    Extract a media identifier from a human-feed URL.
+
+    Returns (media_id, media_name, source_kind):
+      - X/Twitter URLs -> ("@handle", "@handle on X", "x_account")
+      - Weixin URLs    -> ("mp.weixin.qq.com", "Weixin (mp.weixin.qq.com)", "weixin")
+      - Other URLs     -> ("example.com", "example.com", "domain")
+    """
+    try:
+        p = urlparse(url)
+        netloc = p.netloc.lower()
+        if netloc == "mp.weixin.qq.com":
+            return "mp.weixin.qq.com", "Weixin (mp.weixin.qq.com)", "weixin"
+        if netloc in ("x.com", "twitter.com"):
+            m = re.search(r"/([^/]+)/status/", p.path)
+            if m:
+                handle = m.group(1)
+                return f"@{handle}", f"@{handle} on X", "x_account"
+        return netloc, netloc, "domain"
+    except Exception:
+        return url, url, "domain"
+
+
 def _human_feed_sources(vertical: str) -> Dict[str, Dict[str, Any]]:
     """Return human-feed source records keyed by source id."""
     sources = {}
@@ -120,11 +173,12 @@ def _source_proposal_questions_for_today(
     remaining: int,
 ) -> List[Dict[str, Any]]:
     """
-    Generate source-proposal questions for human-feed sources seen today.
+    Generate source-proposal questions for media seen through human-feed today.
 
-    Each human-feed source with items today gets at most one question:
-    "Add '<source name>' as a tracked source?"  Evidence is the list of
-    URLs fed from that source. Weixin URLs trigger a closed-platform note.
+    The proposal is about the *media behind the link* (X handle, domain, or
+    Weixin platform), not the human-feed slot that delivered it. Evidence is
+    the list of URLs fed from that media. Weixin URLs trigger a closed-platform
+    note.
 
     Source-proposal questions are based on today's human-feed items on the
     tape, regardless of whether the item survived prescreen — the question is
@@ -139,49 +193,67 @@ def _source_proposal_questions_for_today(
 
     today = _today()
     hf_source_ids = set(hf_sources)
-    grouped: Dict[str, List[Dict[str, Any]]] = {}
+
+    # Group today's human-feed items by the media they point to.
+    grouped: Dict[str, Dict[str, Any]] = {}
     for item in tape.query(vertical, type="item"):
         if item.get("source_id") not in hf_source_ids:
             continue
         if not item.get("ts", "").startswith(today):
             continue
-        sid = item.get("source_id")
-        grouped.setdefault(sid, []).append(item)
+        url = item.get("url", "")
+        media_id, media_name, source_kind = _media_identifier(url)
+        entry = grouped.setdefault(
+            media_id,
+            {"media_name": media_name, "source_kind": source_kind, "items": [], "urls": set()},
+        )
+        entry["items"].append(item)
+        if url:
+            entry["urls"].add(url)
 
     # Also consider any human-feed items already passed in (e.g. pooled).
     for item in items:
-        sid = item.get("source_id")
-        if sid in hf_source_ids:
-            grouped.setdefault(sid, []).append(item)
+        if item.get("source_id") not in hf_source_ids:
+            continue
+        url = item.get("url", "")
+        media_id, media_name, source_kind = _media_identifier(url)
+        entry = grouped.setdefault(
+            media_id,
+            {"media_name": media_name, "source_kind": source_kind, "items": [], "urls": set()},
+        )
+        entry["items"].append(item)
+        if url:
+            entry["urls"].add(url)
 
     questions: List[Dict[str, Any]] = []
-    for sid in sorted(grouped):
+    for media_id in sorted(grouped):
         if len(questions) >= remaining:
             break
-        source = hf_sources[sid]
-        source_items = grouped[sid]
-        evidence_urls = [item.get("url", "") for item in source_items if item.get("url")]
-        source_name = source.get("name", sid)
-        weixin = any(_is_weixin_url(u) for u in evidence_urls)
+        info = grouped[media_id]
+        evidence_urls = sorted(info["urls"])
+        media_name = info["media_name"]
+        source_kind = info["source_kind"]
+        weixin = source_kind == "weixin"
 
-        text = f"Add '{source_name}' as a tracked source?"
+        text = f"Add '{media_name}' as a tracked source?"
         if weixin:
             text += " (Weixin is a closed platform; expansion research needed.)"
 
         question = {
-            "id": f"echo-{today}-source-{sid}-{datetime.now(timezone.utc).isoformat()}",
+            "id": f"echo-{today}-source-{media_id}-{datetime.now(timezone.utc).isoformat()}",
             "type": "echo_question",
             "kind": "source_proposal",
             "vertical": vertical,
             "date": today,
-            "topic": source_name,
+            "topic": media_name,
             "question": text,
-            "evidence": {"count": len(source_items), "urls": evidence_urls},
+            "evidence": {"count": len(info["items"]), "urls": evidence_urls},
             "answerable_in_one_word": True,
             "status": "pending",
             "proposed_source": {
-                "id": sid,
-                "name": source_name,
+                "id": media_id,
+                "name": media_name,
+                "source_kind": source_kind,
                 "sample_url": evidence_urls[0] if evidence_urls else "",
                 "weixin": weixin,
             },

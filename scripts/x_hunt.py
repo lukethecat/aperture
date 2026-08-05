@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
-"""Agent-facilitated human-feed: hunt AI news on X and inject candidates.
+"""Agent-facilitated human-feed: bookkeep an X/AI candidate into the tape.
+
+This script does **deterministic bookkeeping only** — it writes a curated item
+to the tape as a human-feed entry with `facilitated_by: agent`. The judgment
+(search, read, and selection) is the agent's job, performed with whatever
+WebSearch/tools the agent has available.
 
 Usage:
-    # Search DuckDuckGo for AI posts on X and inject the top candidate
-    python scripts/x_hunt.py --vertical ai-frontier --query "AI artificial intelligence site:x.com" --inject
-
-    # Inject a manually chosen X URL
+    # Inject an item the agent has already searched, read, and selected.
     python scripts/x_hunt.py --vertical ai-frontier \
         --title "OpenAI announces GPT-5" \
         --url "https://x.com/OpenAI/status/1234567890" \
+        --inject
+
+    # Best-effort automated search fallback (many engines block automated
+    # queries, so prefer the --title/--url path in daily operation).
+    python scripts/x_hunt.py --vertical ai-frontier \
+        --query "AI artificial intelligence site:x.com" \
         --inject
 
 The injected item is written to the vertical's tape as a human-feed item with
@@ -23,7 +31,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -65,7 +73,7 @@ def _fetch_url(url: str, timeout: int = 15) -> str:
 
 
 def _duckduckgo_html_search(query: str) -> List[Dict[str, str]]:
-    """Search DuckDuckGo HTML and return result snippets with title/link."""
+    """Best-effort DuckDuckGo HTML search; often blocked or returns no results."""
     encoded = urllib.parse.quote_plus(query)
     url = f"https://html.duckduckgo.com/html/?q={encoded}"
     raw = _fetch_url(url)
@@ -73,10 +81,13 @@ def _duckduckgo_html_search(query: str) -> List[Dict[str, str]]:
         return []
 
     results = []
-    # DuckDuckGo HTML result blocks
-    for block in re.findall(r'<a[^>]*class="result__a"[^>]*>(.*?)</a>.*?(?:<a[^>]*class="result__url"[^>]*href="([^"]+)"[^>]*>[^<]*</a>)?', raw, re.DOTALL | re.IGNORECASE):
+    for block in re.findall(
+        r'<a[^>]*class="result__a"[^>]*>(.*?)</a>.*?(?:<a[^>]*class="result__url"[^>]*href="([^"]*)"[^>]*>[^<]*</a>)?',
+        raw,
+        re.DOTALL | re.IGNORECASE,
+    ):
         title_html, href = block
-        title = re.sub(r'<[^>]+>', '', title_html).strip()
+        title = re.sub(r"<[^>]+>", "", title_html).strip()
         if not title or not href:
             continue
         # DuckDuckGo redirects through //duckduckgo.com/l/?uddg=...
@@ -100,7 +111,6 @@ def _filter_x_ai_results(results: List[Dict[str, str]]) -> List[Dict[str, str]]:
     for r in results:
         url = r.get("url", "")
         title = r.get("title", "")
-        # Accept x.com or twitter.com status URLs
         if not re.search(r"https?://(x\.com|twitter\.com)/[^/]+/status/", url):
             continue
         lower = (title + " " + url).lower()
@@ -140,31 +150,35 @@ def inject_item(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Agent-facilitated human-feed: inject an X/AI candidate into the tape."
+        description="Agent-facilitated human-feed: bookkeep a curated X/AI candidate into the tape."
     )
     parser.add_argument("--vertical", default="ai-frontier", help="Vertical name")
     parser.add_argument("--source-id", default=DEFAULT_HUMAN_FEED_SOURCE, help="Human-feed source id")
     parser.add_argument(
         "--query",
         default="AI artificial intelligence site:x.com",
-        help="Optional search query (best-effort; many engines block automated search)",
+        help="Best-effort automated search fallback (many engines block automated search)",
     )
-    parser.add_argument("--title", help="Manual title (recommended; skip search)")
-    parser.add_argument("--url", help="Manual URL (recommended; skip search)")
-    parser.add_argument("--inject", action="store_true", help="Inject the top candidate into the tape")
+    parser.add_argument("--title", help="Title of the agent-curated post")
+    parser.add_argument("--url", help="URL of the agent-curated post")
+    parser.add_argument("--inject", action="store_true", help="Write the candidate to the tape")
     parser.add_argument("--max-results", type=int, default=5, help="Max candidates to display")
     args = parser.parse_args()
 
     if args.title and args.url:
         candidates = [{"title": args.title, "url": args.url}]
     else:
+        print(
+            "[search] Best-effort automated search fallback. "
+            "Daily workflow should use agent WebSearch + --title/--url."
+        )
         print(f"[search] {args.query}")
         candidates = _duckduckgo_html_search(args.query)
         candidates = _filter_x_ai_results(candidates)
         if not candidates:
             print(
                 "No X candidates found via automated search. "
-                "Use --title and --url to inject a manually chosen post."
+                "Use --title and --url to inject an agent-curated post."
             )
             return 1
 

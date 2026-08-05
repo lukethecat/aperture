@@ -149,10 +149,14 @@ def _check_human_feed_question() -> list:
         return failures
 
     q = source_questions[0]
-    if "Weixin Tip" not in q["question"]:
-        failures.append("source-proposal question missing source name")
+    if "mp.weixin.qq.com" not in q["question"]:
+        failures.append("source-proposal question missing Weixin domain")
+    if "Weixin Tip" in q["question"]:
+        failures.append("source-proposal question should not name the human-feed slot")
     if "closed platform" not in q["question"]:
         failures.append("Weixin URL did not add closed-platform note")
+    if q.get("proposed_source", {}).get("source_kind") != "weixin":
+        failures.append("proposed_source.source_kind not set to weixin")
     if not q.get("proposed_source", {}).get("weixin"):
         failures.append("proposed_source.weixin flag not set")
 
