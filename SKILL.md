@@ -196,6 +196,21 @@ A source can be acquired in five ways. The engine treats them uniformly once the
 
 Add a source by registering `{id, name, list_url, extract_profile}` in the vertical config. A human-feed source sets `extract_profile = { method = "human_feed" }` and may omit `list_url`.
 
+### Agent-facilitated human-feed
+
+A useful variant is **agent-facilitated human-feed**: the agent itself performs a
+platform search (e.g. on X for posts under an AI hashtag in the last 24–36
+hours), curates ≥1 candidate, and injects it through the human-feed channel.
+The injected item still goes through the same prescreen, review, and dedup
+stages as pull/scan items — human-feed guarantees entry into the candidate
+pool, not a free pass into the report.
+
+This mode turns the platform from a passive content source into an active
+source-discovery hunt: when the agent repeatedly finds good stories from the
+same outlet, ECHO can ask "Add '<outlet>' as a tracked source?" and, on yes,
+promote the outlet to a formal pull/scan source. That closed loop is the
+skill's self-evolution in action.
+
 ---
 
 ## 6. Tape record types
