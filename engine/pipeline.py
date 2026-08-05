@@ -86,6 +86,48 @@ def ensure_sources(vertical: str, sources: List[Dict[str, Any]]) -> None:
         tape.append(vertical, record)
 
 
+def _human_feed_sources(sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Return sources configured as human-feed."""
+    result = []
+    for src in sources:
+        profile = src.get("extract_profile", {})
+        method = profile.get("method", "") if isinstance(profile, dict) else ""
+        if method == "human_feed":
+            result.append(src)
+    return result
+
+
+def _collect_human_feed_items(vertical: str, sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Collect human-feed items injected since the last run.
+
+    Human-feed items are written to the tape with `stage: scanned` by the
+    delivery agent (e.g. scripts/x_hunt.py). This function picks up any such
+    items that have not yet been prescreened and prepends them to the
+    candidate list so they go through the same funnel as pull/scan items.
+    """
+    from datetime import datetime, timezone
+
+    hf_source_ids = {s["id"] for s in _human_feed_sources(sources)}
+    if not hf_source_ids:
+        return []
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    items = tape.query(vertical, type="item")
+    candidates: List[Dict[str, Any]] = []
+    for item in items:
+        if item.get("source_id") not in hf_source_ids:
+            continue
+        if item.get("stage") != "scanned":
+            continue
+        if not item.get("ts", "").startswith(today):
+            continue
+        candidate = dict(item)
+        candidate.setdefault("source_name", item.get("source_id"))
+        candidates.append(candidate)
+    return candidates
+
+
 def get_sources(vertical: str) -> List[Dict[str, Any]]:
     """Return the latest source records for a vertical."""
     all_records = tape.query(vertical, type="source")
@@ -120,8 +162,11 @@ def run_pipeline(vertical: str,
     t0 = time.time()
     scan_stats = scan_all(vertical, sources)
     candidates = scan_stats.get("candidates", [])
+    hf_candidates = _collect_human_feed_items(vertical, sources)
+    candidates.extend(hf_candidates)
     timings["collect"] = time.time() - t0
-    print(f"[collect] {len(candidates)} candidates ({timings['collect']:.1f}s)", flush=True)
+    print(f"[collect] {len(candidates)} candidates ({len(hf_candidates)} from human-feed) "
+          f"({timings['collect']:.1f}s)", flush=True)
 
     if not candidates:
         report = generate_report(vertical, timings=timings, use_llm=not dry and use_llm_report)

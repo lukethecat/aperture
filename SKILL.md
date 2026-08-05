@@ -205,6 +205,30 @@ The injected item still goes through the same prescreen, review, and dedup
 stages as pull/scan items — human-feed guarantees entry into the candidate
 pool, not a free pass into the report.
 
+**Reference implementation (`scripts/x_hunt.py`):**
+
+```bash
+# Search DuckDuckGo for AI posts on X and inject the top candidate
+python scripts/x_hunt.py --vertical ai-frontier \
+  --query "AI artificial intelligence site:x.com" --inject
+
+# Inject a manually chosen X URL (preferred when the agent has already curated)
+python scripts/x_hunt.py --vertical ai-frontier \
+  --title "OpenAI announces GPT-5" \
+  --url "https://x.com/OpenAI/status/1234567890" \
+  --inject
+
+# Review without injecting
+python scripts/x_hunt.py --vertical ai-frontier \
+  --query "AI artificial intelligence site:x.com"
+```
+
+The injected record is written to the tape as an `item` with:
+
+- `source_id`: the human-feed source id (default `owner_tips`).
+- `stage`: `scanned` — it enters the pipeline at prescreen.
+- `facilitated_by`: `agent` — auditable provenance.
+
 This mode turns the platform from a passive content source into an active
 source-discovery hunt: when the agent repeatedly finds good stories from the
 same outlet, ECHO can ask "Add '<outlet>' as a tracked source?" and, on yes,
@@ -286,11 +310,13 @@ loop auditable.
    the pooled items and write them to the tape as `echo_question` records with
    `status: pending`. Expire any unanswered questions from the previous day first.
    Human-feed items additionally trigger a source-proposal question:
-   "Add '<source name>' as a tracked source?"  If the sample URL is on
-   `mp.weixin.qq.com`, the question notes that Weixin is a closed platform and
-   that expansion research is needed. A positive answer records a `source_proposal`
-   tape entry; it does **not** automatically register the source (owner confirmation
-   is required).
+   "Add '<source name>' as a tracked source?"  The question is generated from
+   today's human-feed items on the tape **regardless of whether the item survived
+   prescreen** — the question is about the source, not the item's score. If the
+   sample URL is on `mp.weixin.qq.com`, the question notes that Weixin is a closed
+   platform and that expansion research is needed. A positive answer records a
+   `source_proposal` tape entry; it does **not** automatically register the source
+   (owner confirmation is required).
 2. **deliver** — the cron/delivery layer reads pending questions, posts them
    alongside the report, and marks them `delivered`. No generation happens here;
    the layer is pure read + mark.

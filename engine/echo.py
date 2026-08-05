@@ -125,6 +125,10 @@ def _source_proposal_questions_for_today(
     Each human-feed source with items today gets at most one question:
     "Add '<source name>' as a tracked source?"  Evidence is the list of
     URLs fed from that source. Weixin URLs trigger a closed-platform note.
+
+    Source-proposal questions are based on today's human-feed items on the
+    tape, regardless of whether the item survived prescreen — the question is
+    about the source, not the item's score.
     """
     if remaining <= 0:
         return []
@@ -134,10 +138,20 @@ def _source_proposal_questions_for_today(
         return []
 
     today = _today()
+    hf_source_ids = set(hf_sources)
     grouped: Dict[str, List[Dict[str, Any]]] = {}
+    for item in tape.query(vertical, type="item"):
+        if item.get("source_id") not in hf_source_ids:
+            continue
+        if not item.get("ts", "").startswith(today):
+            continue
+        sid = item.get("source_id")
+        grouped.setdefault(sid, []).append(item)
+
+    # Also consider any human-feed items already passed in (e.g. pooled).
     for item in items:
         sid = item.get("source_id")
-        if sid in hf_sources:
+        if sid in hf_source_ids:
             grouped.setdefault(sid, []).append(item)
 
     questions: List[Dict[str, Any]] = []
@@ -267,52 +281,56 @@ def prepare(vertical: str,
         _save_echo_state(vertical, state)
         return []
 
-    items = items or _recent_pooled_items(vertical, days=1)
-    if not items:
-        _save_echo_state(vertical, state)
-        return []
-
     questions: List[Dict[str, Any]] = []
     remaining = max_questions - state.get("daily_count", 0)
 
     # Source-proposal questions from human-feed sources take priority.
-    source_questions = _source_proposal_questions_for_today(vertical, items, remaining)
+    # They are based on today's human-feed items on the tape, regardless of
+    # whether those items survived prescreen.
+    source_questions = _source_proposal_questions_for_today(
+        vertical, items if items is not None else [], remaining
+    )
     questions.extend(source_questions)
     remaining -= len(source_questions)
 
-    existing_terms = _profile_terms(vertical)
-    topic_counts = _extract_candidate_topics(items)
-    candidate_topics = [
-        (topic, count) for topic, count in topic_counts.items()
-        if topic.lower() not in existing_terms and count >= 2
-    ]
-    candidate_topics.sort(key=lambda x: -x[1])
+    items = items or _recent_pooled_items(vertical, days=1)
+    if items:
+        existing_terms = _profile_terms(vertical)
+        topic_counts = _extract_candidate_topics(items)
+        candidate_topics = [
+            (topic, count) for topic, count in topic_counts.items()
+            if topic.lower() not in existing_terms and count >= 2
+        ]
+        candidate_topics.sort(key=lambda x: -x[1])
 
-    for topic, count in candidate_topics[:remaining]:
-        evidence_items = [
-            item for item in items
-            if topic.lower() in item.get("title", "").lower()
-        ][:2]
-        evidence_urls = [item.get("url", "") for item in evidence_items if item.get("url")]
+        for topic, count in candidate_topics[:remaining]:
+            evidence_items = [
+                item for item in items
+                if topic.lower() in item.get("title", "").lower()
+            ][:2]
+            evidence_urls = [item.get("url", "") for item in evidence_items if item.get("url")]
 
-        question = {
-            "id": f"echo-{today}-{topic.lower()}-{datetime.now(timezone.utc).isoformat()}",
-            "type": "echo_question",
-            "vertical": vertical,
-            "date": today,
-            "topic": topic,
-            "question": f"Add '{topic}' to the profile?",
-            "evidence": {"count": count, "urls": evidence_urls},
-            "answerable_in_one_word": True,
-            "status": "pending",
-        }
-        tape.append(vertical, question)
-        questions.append(question)
+            question = {
+                "id": f"echo-{today}-{topic.lower()}-{datetime.now(timezone.utc).isoformat()}",
+                "type": "echo_question",
+                "vertical": vertical,
+                "date": today,
+                "topic": topic,
+                "question": f"Add '{topic}' to the profile?",
+                "evidence": {"count": count, "urls": evidence_urls},
+                "answerable_in_one_word": True,
+                "status": "pending",
+            }
+            tape.append(vertical, question)
+            questions.append(question)
 
-    if questions:
-        state["last_prepare_date"] = today
-        state["daily_count"] = state.get("daily_count", 0) + len(questions)
-        # We do not increment consecutive_ignored here; that happens on expiry.
+    if not questions:
+        _save_echo_state(vertical, state)
+        return []
+
+    state["last_prepare_date"] = today
+    state["daily_count"] = state.get("daily_count", 0) + len(questions)
+    # We do not increment consecutive_ignored here; that happens on expiry.
 
     _save_echo_state(vertical, state)
     return questions

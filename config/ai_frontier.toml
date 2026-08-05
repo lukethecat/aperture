@@ -284,14 +284,14 @@ extract_profile = { method = "rss", window_hours = 36 }
 id = "qwen_blog"
 name = "Qwen Blog"
 list_url = "https://qwenlm.github.io/"
-extract_profile = {
-    method = "regex",
-    pattern = '<h2>([^<]+)</h2>.*?<a[^>]*class=entry-link[^>]*href=([^\\s>]+)[^>]*>',
-    title_group = 0,
-    url_group = 1,
-    window_hours = 36,
-    missing_date_policy = "include",
-}
+
+[sources.extract_profile]
+method = "regex"
+pattern = '<h2>([^<]+)</h2>.*?<a[^>]*class=entry-link[^>]*href=([^\\s>]+)[^>]*>'
+title_group = 0
+url_group = 1
+window_hours = 36
+missing_date_policy = "include"
 
 # Human-feed source: owner/agent drops links (e.g. from X) during the daily window.
 # No list_url; entries are injected separately. It still participates in the

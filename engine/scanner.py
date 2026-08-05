@@ -375,6 +375,20 @@ def scan_all(vertical: str, sources: List[Dict[str, Any]]) -> Dict[str, Any]:
     for src in sources:
         sid = src["id"]
         sname = src.get("name", sid)
+        profile = src.get("extract_profile", {})
+        method = profile.get("method", "") if isinstance(profile, dict) else ""
+
+        # Human-feed sources have no list_url to fetch; their items are injected
+        # separately and picked up by the pipeline after the scan stage.
+        if method == "human_feed":
+            stats["per_source"][sid] = {
+                "name": sname,
+                "items": 0,
+                "candidates": 0,
+                "status": "human-feed",
+            }
+            continue
+
         items, success = fetch_frontpage(src)
 
         if success:
