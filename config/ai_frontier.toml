@@ -1,0 +1,276 @@
+# Vertical configuration: AI frontier daily
+# English sources -> Chinese report.
+# Focus: frontier models, agents, benchmarks, safety, major lab moves, product launches.
+
+vertical = "ai-frontier"
+
+# Prescreen threshold: require a clear frontier-AI signal, not just the word "AI".
+threshold = 10
+
+# High-weight terms: strong frontier-AI signals on their own.
+[[keywords]]
+term = "agent"
+weight = 5
+
+[[keywords]]
+term = "benchmark"
+weight = 5
+
+[[keywords]]
+term = "multimodal"
+weight = 5
+
+[[keywords]]
+term = "reasoning"
+weight = 5
+
+[[keywords]]
+term = "safety"
+weight = 5
+
+[[keywords]]
+term = "alignment"
+weight = 5
+
+[[keywords]]
+term = "regulation"
+weight = 5
+
+[[keywords]]
+term = "open weights"
+weight = 5
+
+[[keywords]]
+term = "foundation model"
+weight = 5
+
+[[keywords]]
+term = "RLHF"
+weight = 5
+
+# Medium-weight terms: important but need company/context to pass.
+[[keywords]]
+term = "LLM"
+weight = 4
+
+[[keywords]]
+term = "post-training"
+weight = 4
+
+[[keywords]]
+term = "long-context"
+weight = 4
+
+[[keywords]]
+term = "MoE"
+weight = 4
+
+[[keywords]]
+term = "distillation"
+weight = 4
+
+[[keywords]]
+term = "eval"
+weight = 4
+
+[[keywords]]
+term = "red team"
+weight = 4
+
+# Company / model names: good signal when combined with product/release terms.
+[[keywords]]
+term = "GPT"
+weight = 3
+
+[[keywords]]
+term = "Claude"
+weight = 3
+
+[[keywords]]
+term = "Gemini"
+weight = 3
+
+[[keywords]]
+term = "Llama"
+weight = 3
+
+[[keywords]]
+term = "Mistral"
+weight = 3
+
+[[keywords]]
+term = "xAI"
+weight = 3
+
+[[keywords]]
+term = "DeepMind"
+weight = 3
+
+[[keywords]]
+term = "Anthropic"
+weight = 3
+
+[[keywords]]
+term = "OpenAI"
+weight = 3
+
+[[keywords]]
+term = "Moonshot"
+weight = 3
+
+[[keywords]]
+term = "Qwen"
+weight = 3
+
+# Low-weight helpers: broaden recall without passing generic headlines alone.
+[[keywords]]
+term = "AI"
+weight = 2
+
+[[keywords]]
+term = "model"
+weight = 2
+
+[[keywords]]
+term = "Google"
+weight = 1
+
+[[keywords]]
+term = "Meta"
+weight = 1
+
+# Negatives: filter obvious noise.
+[[negatives]]
+term = "sponsored"
+weight = 5
+
+[[negatives]]
+term = "deals"
+weight = 3
+
+[[negatives]]
+term = "review"
+weight = 3
+
+[[negatives]]
+term = "crypto"
+weight = 3
+
+[[negatives]]
+term = "NFT"
+weight = 3
+
+[[negatives]]
+term = "webinar"
+weight = 3
+
+[[negatives]]
+term = "podcast"
+weight = 2
+
+[[negatives]]
+term = "stock price"
+weight = 2
+
+[[negatives]]
+term = "earnings call"
+weight = 2
+
+# Categories add bonuses when headlines clearly belong to a frontier-AI sub-beat.
+[[categories]]
+name = "models"
+keywords = ["model", "LLM", "GPT", "Claude", "Gemini", "Llama", "Mistral", "xAI", "open weights", "foundation model", "MoE", "distillation"]
+bonus = 3
+
+[[categories]]
+name = "products"
+keywords = ["product", "launch", "feature", "API", "chatbot", "assistant", "app"]
+bonus = 2
+
+[[categories]]
+name = "safety"
+keywords = ["safety", "alignment", "risk", "red team", "eval", "harm", "regulation", "policy"]
+bonus = 3
+
+[[categories]]
+name = "business"
+keywords = ["funding", "investment", "IPO", "acquisition", "partnership", "revenue"]
+bonus = 2
+
+[[categories]]
+name = "research"
+keywords = ["paper", "arxiv", "study", "benchmark", "result", "SOTA"]
+bonus = 2
+
+# Source registry — all verified reachable RSS/Atom feeds.
+[[sources]]
+id = "hn_rss"
+name = "Hacker News"
+list_url = "https://news.ycombinator.com/rss"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "tc_ai_rss"
+name = "TechCrunch AI"
+list_url = "https://techcrunch.com/category/artificial-intelligence/feed/"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "verge_ai_rss"
+name = "The Verge AI"
+list_url = "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "vb_ai_rss"
+name = "VentureBeat AI"
+list_url = "https://venturebeat.com/category/ai/feed/"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "mit_tr_rss"
+name = "MIT Technology Review"
+list_url = "https://www.technologyreview.com/feed/"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "decoder_rss"
+name = "The Decoder"
+list_url = "https://the-decoder.com/feed/"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "marktechpost_rss"
+name = "MarkTechPost"
+list_url = "https://www.marktechpost.com/feed/"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "openai_blog_rss"
+name = "OpenAI Blog"
+list_url = "https://openai.com/blog/rss.xml"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "deepmind_blog_rss"
+name = "Google DeepMind"
+list_url = "https://deepmind.google/blog/rss.xml"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "moonshot_rss"
+name = "Moonshot AI"
+list_url = "https://moonshot.ai/news/rss.xml"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "local_llama_rss"
+name = "r/LocalLLaMA"
+list_url = "https://www.reddit.com/r/LocalLLaMA.rss"
+extract_profile = { method = "rss" }
+
+[[sources]]
+id = "openclaw_releases"
+name = "OpenClaw Releases"
+list_url = "https://github.com/openclaw/openclaw/releases.atom"
+extract_profile = { method = "rss" }

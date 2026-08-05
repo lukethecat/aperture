@@ -22,6 +22,7 @@ def init_profile(
     categories: List[Dict[str, Any]],
     negatives: List[Dict[str, Any]],
     reason: str = "initial profile",
+    threshold: int = 2,
 ) -> Dict[str, Any]:
     """
     Create an initial profile (version=1). Does not overwrite an existing one.
@@ -51,6 +52,7 @@ def init_profile(
         "type": "profile",
         "vertical": vertical,
         "version": 1,
+        "threshold": threshold,
         "keywords": _normalize(keywords),
         "negatives": _normalize(negatives),
         "categories": categories,

@@ -14,9 +14,9 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 
 from . import tape
-from .profile import get_categories, get_keyword_map, record_hit
+from .profile import get_categories, get_keyword_map, get_profile, record_hit
 
-PREENCREEN_THRESHOLD = 2
+DEFAULT_THRESHOLD = 2
 
 
 def _term_matches(text_lower: str, term: str) -> bool:
@@ -40,6 +40,8 @@ def prescreen_item(title: str, _url_norm: str, vertical: str) -> Dict[str, Any]:
     Score a single candidate. Returns a dict with score, matches,
     pass flag, and reject_reason.
     """
+    profile = get_profile(vertical) or {}
+    threshold = profile.get("threshold", DEFAULT_THRESHOLD)
     pos_kw, neg_kw = get_keyword_map(vertical)
     categories = get_categories(vertical)
 
@@ -70,7 +72,7 @@ def prescreen_item(title: str, _url_norm: str, vertical: str) -> Dict[str, Any]:
             matched_negatives.append({"term": term, "weight": weight})
             record_hit(vertical, term)
 
-    passed = score >= PREENCREEN_THRESHOLD
+    passed = score >= threshold
     return {
         "score": score,
         "matched_keywords": matched_keywords,
