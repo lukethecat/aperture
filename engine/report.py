@@ -12,6 +12,21 @@ from . import tape
 from .verifier import call_llm, get_llm_provider
 
 
+def _local_today() -> str:
+    """Return today's date in the system's local timezone."""
+    return datetime.now().astimezone().strftime("%Y-%m-%d")
+
+
+def _utc_ts_to_local_date(ts: str) -> str:
+    """Convert an ISO UTC timestamp string to the local date."""
+    if not ts:
+        return ""
+    dt = datetime.fromisoformat(ts)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone().strftime("%Y-%m-%d")
+
+
 def _is_human_feed_source(source: Dict[str, Any]) -> bool:
     """Return True if the source is configured as human-feed."""
     profile = source.get("extract_profile", {})
@@ -24,7 +39,7 @@ def _human_feed_sources_with_items_today(vertical: str, today: str) -> Set[str]:
     """Return human-feed source ids that have at least one item today."""
     active: Set[str] = set()
     for item in tape.query(vertical, type="item"):
-        if item.get("ts", "").startswith(today):
+        if _utc_ts_to_local_date(item.get("ts", "")) == today:
             active.add(item.get("source_id", ""))
     return active
 
@@ -186,14 +201,14 @@ def generate_report(vertical: str,
       timings: optional stage timings for the status footer
       use_llm: whether to try LLM formatting when a provider is configured
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now().astimezone()
     today = now.strftime("%Y-%m-%d")
     date_short = now.strftime("%y%m%d")
 
     all_items = tape.query(vertical, type="item")
     today_items = [
         i for i in all_items
-        if i.get("stage") == "pooled" and i.get("ts", "").startswith(today)
+        if i.get("stage") == "pooled" and _utc_ts_to_local_date(i.get("ts", "")) == today
     ]
 
     if not today_items:
@@ -218,12 +233,15 @@ def generate_report(vertical: str,
     lines.append("Status for Nerds")
 
     frontpages = tape.query(vertical, type="frontpage")
-    today_fp = [f for f in frontpages if f.get("date") == today]
+    today_fp = [
+        f for f in frontpages
+        if _utc_ts_to_local_date(f.get("ts", f"{f.get('date', '')}T00:00:00+00:00")) == today
+    ]
     total_scanned = sum(f.get("count", 0) for f in today_fp)
 
     today_item_records = [
         i for i in all_items
-        if i.get("ts", "").startswith(today)
+        if _utc_ts_to_local_date(i.get("ts", "")) == today
         and i.get("stage") in ("prescreened", "verified", "pooled", "rejected")
     ]
     rejected_count = len([i for i in today_item_records if i.get("stage") == "rejected"])
@@ -319,10 +337,10 @@ def generate_report(vertical: str,
 
 
 def save_report(report: Dict[str, Any], out_dir: str) -> None:
-    """Save report body to a text file."""
+    """Save report body as a Markdown daily issue."""
     import os
     os.makedirs(out_dir, exist_ok=True)
-    today = datetime.now(timezone.utc).strftime("%y%m%d")
-    path = os.path.join(out_dir, f"report_{today}.txt")
+    today = _local_today()
+    path = os.path.join(out_dir, f"{today}.md")
     with open(path, "w", encoding="utf-8") as f:
         f.write(report["body"])

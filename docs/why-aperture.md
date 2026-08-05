@@ -26,7 +26,7 @@ Aperture is also AI-native: [SKILL.md](../SKILL.md) is the primary spec, executa
 
 ## See it
 
-- [Real daily issue, 2026-08-05](issues/2026-08-05.md)
+- [Real daily issue, 2026-08-06](issues/2026-08-06.md)
 - [Annotated sample issue](sample-issue.md)
 - [When is this the right tool?](when-to-use-aperture.md)
 - [Module-by-module advantages](module-showcase.md)

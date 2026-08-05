@@ -287,7 +287,7 @@ list_url = "https://qwenlm.github.io/"
 
 [sources.extract_profile]
 method = "regex"
-pattern = '<h2>([^<]+)</h2>.*?<a[^>]*class=entry-link[^>]*href=([^\\s>]+)[^>]*>'
+pattern = '<h2>([^<]+)</h2>.*?<a[^>]*class=entry-link[^>]*href=([^\s>]+)[^>]*>'
 title_group = 0
 url_group = 1
 window_hours = 36

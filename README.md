@@ -8,7 +8,7 @@ _your agent's daily front page — reads the news like a human, shows you the ta
 [![License: MIT](https://img.shields.io/github/license/lukethecat/aperture?style=flat-square)](LICENSE)
 [![v0.1.0](https://img.shields.io/github/v/release/lukethecat/aperture?style=flat-square)](https://github.com/lukethecat/aperture/releases)
 
-[📄 Real issue · 2026-08-05 →](docs/issues/2026-08-05.md) · [Install](docs/installing-for-agents.md) · [Docs](docs/how-it-works.md)
+[📄 Real issue · 2026-08-06 →](docs/issues/2026-08-06.md) · [Install](docs/installing-for-agents.md) · [Docs](docs/how-it-works.md)
 
 </div>
 
@@ -26,7 +26,7 @@ Control surfaces that make Aperture different from a static RSS aggregator:
 
 ## Real output
 
-Daily issues are committed to [`docs/issues/`](docs/issues/) as dogfooding evidence. The [latest issue →](docs/issues/2026-08-05.md) includes source registry status and tape references.
+Daily issues are committed to [`docs/issues/`](docs/issues/) as dogfooding evidence. The [latest issue →](docs/issues/2026-08-06.md) includes source registry status and tape references.
 
 ---
 

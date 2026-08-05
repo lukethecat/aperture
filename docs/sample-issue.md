@@ -4,7 +4,7 @@
 
 Aperture dogfoods its own `ai-frontier` vertical every day. The latest real daily issue is here:
 
-**→ [docs/issues/2026-08-05.md](issues/2026-08-05.md)** — English sources, Chinese report.
+**→ [docs/issues/2026-08-06.md](issues/2026-08-06.md)** — English sources, English report.
 
 Older issues live in [`docs/issues/`](issues/).
 

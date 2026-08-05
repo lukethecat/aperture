@@ -17,6 +17,13 @@ import sys
 import time
 from typing import Any, Dict, List
 
+# Windows consoles may default to a legacy code page that cannot render
+# registry/status emoji used in reports. Force UTF-8 for stdout/stderr.
+if sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if sys.stderr.encoding.lower() not in ("utf-8", "utf8"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 from . import tape
 from .dedup import dedup_and_cluster, print_dedup_stats
 from .prescreen import prescreen_candidates, print_prescreen_stats
