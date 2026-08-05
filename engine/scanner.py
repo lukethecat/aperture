@@ -10,8 +10,9 @@ import json
 import re
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Set, Tuple
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
+from typing import Any, Dict, List, Optional, Set, Tuple
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from . import tape
@@ -124,8 +125,22 @@ def _extract_generic_links(raw: str, base_url: str, link_prefix: str = "") -> Li
     return results
 
 
+def _parse_rfc822_date(value: str) -> Optional[datetime]:
+    """Parse an RSS/Atom style date into an aware UTC datetime."""
+    value = value.strip()
+    if not value:
+        return None
+    try:
+        dt = parsedate_to_datetime(value)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
 def _extract_rss(raw: str, base_url: str) -> List[Dict[str, str]]:
-    """Extract items from RSS/XML."""
+    """Extract items from RSS/XML, including pubDate when available."""
     items = re.findall(r'<item>(.*?)</item>', raw, re.DOTALL | re.IGNORECASE)
     results = []
     for item in items:
@@ -133,6 +148,7 @@ def _extract_rss(raw: str, base_url: str) -> List[Dict[str, str]]:
         l = re.search(r'<link[^>]*>(.*?)</link>', item, re.DOTALL | re.IGNORECASE)
         if not l:
             l = re.search(r'<guid[^>]*>(.*?)</guid>', item, re.DOTALL | re.IGNORECASE)
+        d = re.search(r'<pubDate[^>]*>(.*?)</pubDate>', item, re.DOTALL | re.IGNORECASE)
         if not t or not l:
             continue
         title = re.sub(r'<!\[CDATA\[(.*?)\]\]>', r'\1', t.group(1).strip(), flags=re.DOTALL)
@@ -141,7 +157,10 @@ def _extract_rss(raw: str, base_url: str) -> List[Dict[str, str]]:
         link = html_module.unescape(link).strip()
         if not link.startswith("http"):
             continue
-        results.append({"title": title, "url": link})
+        entry = {"title": title, "url": link}
+        if d:
+            entry["pub_date"] = d.group(1).strip()
+        results.append(entry)
     return results
 
 
@@ -223,9 +242,39 @@ def extract_items(raw: str, profile: Dict[str, Any], base_url: str) -> List[Dict
     return _extract_generic_links(raw, base_url, profile.get("link_prefix", ""))
 
 
+def _apply_time_window(
+    items: List[Dict[str, str]],
+    window_hours: float,
+    missing_date_policy: str,
+    now: datetime,
+) -> List[Dict[str, str]]:
+    """
+    Filter items to only those published within the last window_hours.
+    Items without a parseable pub_date are dropped by default (conservative).
+    Set missing_date_policy='include' to keep them for sources where dates are unreliable.
+    """
+    cutoff = now - timedelta(hours=window_hours)
+    kept: List[Dict[str, str]] = []
+    for item in items:
+        raw_date = item.get("pub_date")
+        if not raw_date:
+            if missing_date_policy == "include":
+                kept.append(item)
+            continue
+        dt = _parse_rfc822_date(raw_date) if isinstance(raw_date, str) else raw_date
+        if dt is None:
+            if missing_date_policy == "include":
+                kept.append(item)
+            continue
+        if dt >= cutoff:
+            kept.append(item)
+    return kept
+
+
 def fetch_frontpage(source: Dict[str, Any]) -> Tuple[List[Dict[str, str]], bool]:
     """
     Fetch a source's list page and extract items.
+    Applies a configurable publication-date window (default 36h) before diffing.
     Returns (items, success).
     """
     list_url = source["list_url"]
@@ -236,6 +285,11 @@ def fetch_frontpage(source: Dict[str, Any]) -> Tuple[List[Dict[str, str]], bool]
         return [], False
 
     items = extract_items(raw, profile, list_url)
+    now = datetime.now(timezone.utc)
+    window_hours = profile.get("window_hours", 36)
+    missing_policy = profile.get("missing_date_policy", "exclude")
+    items = _apply_time_window(items, window_hours, missing_policy, now)
+
     valid_items = []
     for item in items:
         url = normalize_url(item.get("url", ""))

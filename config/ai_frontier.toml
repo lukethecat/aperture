@@ -5,7 +5,8 @@
 vertical = "ai-frontier"
 
 # Prescreen threshold: require a clear frontier-AI signal, not just the word "AI".
-threshold = 10
+# Window filtering keeps the candidate set clean; threshold can be lower than on a raw feed.
+threshold = 6
 
 # High-weight terms: strong frontier-AI signals on their own.
 [[keywords]]
@@ -203,74 +204,75 @@ keywords = ["paper", "arxiv", "study", "benchmark", "result", "SOTA"]
 bonus = 2
 
 # Source registry — all verified reachable RSS/Atom feeds.
+# 36-hour window prevents stale backlog from contaminating the daily issue on first run.
 [[sources]]
 id = "hn_rss"
 name = "Hacker News"
 list_url = "https://news.ycombinator.com/rss"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "tc_ai_rss"
 name = "TechCrunch AI"
 list_url = "https://techcrunch.com/category/artificial-intelligence/feed/"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "verge_ai_rss"
 name = "The Verge AI"
 list_url = "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "vb_ai_rss"
 name = "VentureBeat AI"
 list_url = "https://venturebeat.com/category/ai/feed/"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "mit_tr_rss"
 name = "MIT Technology Review"
 list_url = "https://www.technologyreview.com/feed/"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "decoder_rss"
 name = "The Decoder"
 list_url = "https://the-decoder.com/feed/"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "marktechpost_rss"
 name = "MarkTechPost"
 list_url = "https://www.marktechpost.com/feed/"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "openai_blog_rss"
 name = "OpenAI Blog"
 list_url = "https://openai.com/blog/rss.xml"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "deepmind_blog_rss"
 name = "Google DeepMind"
 list_url = "https://deepmind.google/blog/rss.xml"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "moonshot_rss"
 name = "Moonshot AI"
 list_url = "https://moonshot.ai/news/rss.xml"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "local_llama_rss"
 name = "r/LocalLLaMA"
 list_url = "https://www.reddit.com/r/LocalLLaMA.rss"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }
 
 [[sources]]
 id = "openclaw_releases"
 name = "OpenClaw Releases"
 list_url = "https://github.com/openclaw/openclaw/releases.atom"
-extract_profile = { method = "rss" }
+extract_profile = { method = "rss", window_hours = 36 }

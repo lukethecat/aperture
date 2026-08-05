@@ -81,6 +81,11 @@ When an agent runs this skill, it can answer "why was this selected?" and "what 
 **Why diff against the frontpage instead of parsing publish dates?**
 Because many sources have unreliable timestamps or anti-scraping layouts. "New on the front page" is a robust proxy for "news in today's window".
 
+**Time-window guard (deterministic, not LLM):**
+For pull sources that do expose `pubDate` (RSS/Atom), the scanner applies a hard cutoff before diffing. Default window is **36 hours**; override with `extract_profile.window_hours`. Items older than the window are dropped. Items with missing or unparseable dates are **excluded by default** (`missing_date_policy: exclude`) because a date the engine cannot verify is a date it cannot trust. Set `missing_date_policy: include` only for sources where dates are known to be unreliable and frontpage diff is the primary signal.
+
+This rule exists because date-window enforcement is bookkeeping, not judgment. It must be deterministic and auditable — never delegated to an LLM, which is prone to misreading dates and mixing stale stories into today's report.
+
 ### 3.2 Edit — prescreen with the profile
 
 **Goal:** score candidates with cheap rules; keep the wide funnel.
