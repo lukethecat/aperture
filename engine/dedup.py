@@ -17,6 +17,16 @@ from . import tape
 
 DEDUP_LOOKBACK_DAYS = 14
 HAMMING_THRESHOLD = 3
+TOKEN_OVERLAP_THRESHOLD = 3
+_STOPWORDS = {
+    "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+    "of", "with", "by", "from", "as", "is", "are", "was", "were", "be",
+    "been", "being", "have", "has", "had", "do", "does", "did", "will",
+    "would", "could", "should", "may", "might", "must", "shall", "can",
+    "need", "dare", "ought", "used", "this", "that", "these", "those",
+    "i", "you", "he", "she", "it", "we", "they", "me", "him", "her",
+    "us", "them", "my", "your", "his", "its", "our", "their",
+}
 
 
 def _tokenize(text: str) -> List[str]:
@@ -46,6 +56,16 @@ def simhash(text: str, bits: int = 64) -> int:
         if v[i] > 0:
             fingerprint |= (1 << i)
     return fingerprint
+
+
+def _significant_tokens(text: str) -> Set[str]:
+    """Return non-stopword tokens for overlap comparison."""
+    return set(_tokenize(text)) - _STOPWORDS
+
+
+def _title_overlap(t1: str, t2: str) -> int:
+    """Count shared significant tokens between two titles."""
+    return len(_significant_tokens(t1) & _significant_tokens(t2))
 
 
 def hamming_distance(h1: int, h2: int) -> int:
@@ -82,10 +102,14 @@ def dedup_and_cluster(candidates: List[Dict[str, Any]],
     recent = load_recent_items(vertical)
     seen_urls: Set[str] = {r.get("url_norm", "") for r in recent if r.get("url_norm")}
     history_hashes: List[Tuple[int, str]] = []
+    history_items: Dict[str, Dict[str, Any]] = {}
     for r in recent:
         sh = r.get("simhash")
+        rid = r.get("id", "")
         if sh:
-            history_hashes.append((sh, r.get("id", "")))
+            history_hashes.append((sh, rid))
+        if rid:
+            history_items[rid] = r
 
     for c in candidates:
         title = c.get("title", "")
@@ -108,8 +132,16 @@ def dedup_and_cluster(candidates: List[Dict[str, Any]],
             continue
 
         matched_cluster = None
+        candidate_title = c.get("title", "")
         for hist_hash, hist_id in history_hashes:
             if hamming_distance(sh, hist_hash) <= HAMMING_THRESHOLD:
+                matched_cluster = hist_id
+                break
+            # Fallback: same-event items from different outlets often have
+            # very different headlines. If they share enough significant
+            # tokens, treat them as the same cluster.
+            hist_item = history_items.get(hist_id) or next((i for i in pooled if i.get("id") == hist_id), None)
+            if hist_item and _title_overlap(candidate_title, hist_item.get("title", "")) >= TOKEN_OVERLAP_THRESHOLD:
                 matched_cluster = hist_id
                 break
 
@@ -123,6 +155,7 @@ def dedup_and_cluster(candidates: List[Dict[str, Any]],
             c["cluster_id"] = c["id"]
             clusters[c["id"]] = [c]
             history_hashes.append((sh, c["id"]))
+            history_items[c["id"]] = c
 
         seen_urls.add(url_n)
         c["stage"] = "pooled"

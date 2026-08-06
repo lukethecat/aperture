@@ -27,6 +27,15 @@ def _utc_ts_to_local_date(ts: str) -> str:
     return dt.astimezone().strftime("%Y-%m-%d")
 
 
+def _vertical_display_name(vertical: str) -> str:
+    """Map a vertical slug to a human-readable report title."""
+    mapping = {
+        "ai-frontier": "AI Frontier Daily",
+        "tech": "Tech Daily",
+    }
+    return mapping.get(vertical, f"{vertical.replace('-', ' ').title()} Daily")
+
+
 def _is_human_feed_source(source: Dict[str, Any]) -> bool:
     """Return True if the source is configured as human-feed."""
     profile = source.get("extract_profile", {})
@@ -47,7 +56,8 @@ def _human_feed_sources_with_items_today(vertical: str, today: str) -> Set[str]:
 def _format_simple_report(vertical: str, today: str, items: List[Dict[str, Any]],
                           summary: str = "") -> str:
     """Fallback formatter when no LLM provider is available."""
-    lines = [f"# Daily Report {today} ({vertical})", ""]
+    title = _vertical_display_name(vertical)
+    lines = [f"# {title} · {today}", ""]
     if summary:
         lines.append(f"> **Editor's note**: {summary}")
         lines.append("")
@@ -73,7 +83,8 @@ def _format_llm_report(vertical: str, today: str, items: List[Dict[str, Any]],
                        summary: str = "") -> str:
     """Use the configured LLM provider to format the report."""
     if not items:
-        return f"# Daily Report {today} ({vertical})\n\nNo items today."
+        title = _vertical_display_name(vertical)
+        return f"# {title} · {today}\n\nNo items today."
 
     prompt_items = []
     for item in items:
@@ -206,15 +217,27 @@ def generate_report(vertical: str,
     date_short = now.strftime("%y%m%d")
 
     all_items = tape.query(vertical, type="item")
-    today_items = [
+    today_pooled = [
         i for i in all_items
-        if i.get("stage") == "pooled" and _utc_ts_to_local_date(i.get("ts", "")) == today
+        if i.get("stage") == "pooled"
+        and _utc_ts_to_local_date(i.get("ts", "")) == today
+    ]
+    # Deduplication may cluster same-event items from different sources.
+    # Keep only the highest-scoring item from each cluster for the report.
+    cluster_groups: Dict[str, List[Dict[str, Any]]] = {}
+    for i in today_pooled:
+        cid = i.get("cluster_id") or i.get("id")
+        cluster_groups.setdefault(cid, []).append(i)
+    today_items = [
+        sorted(items, key=lambda x: x.get("scores", {}).get("prescreen", 0), reverse=True)[0]
+        for items in cluster_groups.values()
     ]
 
     if not today_items:
-        body = f"# Daily Report {date_short} ({vertical})\n\nNo pooled items today."
+        title = _vertical_display_name(vertical)
+        body = f"# {title} · {today}\n\nNo pooled items today."
         return {
-            "title": f"Daily Report {date_short} ({vertical})",
+            "title": f"{title} · {today}",
             "body": body,
             "stats": {"pooled": 0, "formatted": 0},
         }
@@ -230,7 +253,7 @@ def generate_report(vertical: str,
     lines = body.splitlines()
     lines.append("")
     lines.append("---")
-    lines.append("Status for Nerds")
+    lines.append("Aperture Stats")
 
     frontpages = tape.query(vertical, type="frontpage")
     today_fp = [
@@ -258,14 +281,14 @@ def generate_report(vertical: str,
         if s.get("health", {}).get("fail_count", 0) == 0
     )
 
-    lines.append(f"- Sources: {len(source_map)} ({ok_sources} healthy) -> scanned: {total_scanned}")
+    lines.append(f"- Sources: {len(source_map)} ({ok_sources} healthy) → scanned: {total_scanned}")
     lines.append(
-        f"- Prescreened: {prescreened_count - rejected_count} -> "
-        f"pooled: {len(today_items)} -> report: {len(today_items)}"
+        f"- Prescreened: {prescreened_count} → rejected: {rejected_count} → "
+        f"pooled: {len(today_items)} → report: {len(today_items)}"
     )
 
     if timings:
-        lines.append(f"- {_format_timing_footer(timings)}")
+        lines.append(f"- Timings: {_format_timing_footer(timings)}")
 
     alerts = [
         f"{s['name']}({s['health']['fail_count']} fails)"
@@ -323,8 +346,9 @@ def generate_report(vertical: str,
         },
     )
 
+    report_title = f"{_vertical_display_name(vertical)} · {today}"
     return {
-        "title": f"Daily Report {date_short} ({vertical})",
+        "title": report_title,
         "body": body,
         "stats": {
             "scanned": total_scanned,
