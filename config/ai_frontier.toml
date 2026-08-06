@@ -4,9 +4,11 @@
 
 vertical = "ai-frontier"
 
-# Prescreen threshold: require a clear frontier-AI signal, not just the word "AI".
-# Window filtering keeps the candidate set clean; threshold can be lower than on a raw feed.
-threshold = 6
+# Prescreen threshold: let more candidates reach the LLM review gate.
+# Frontier-editor tuning (2026-08-06): lowered from 6 to 3 so industry moves,
+# leadership changes, and regulatory stories are not rejected by title-only keywords.
+# The review stage remains the real quality gate; negatives still filter obvious noise.
+threshold = 3
 
 # High-weight terms: strong frontier-AI signals on their own.
 [[keywords]]
@@ -123,6 +125,50 @@ weight = 3
 term = "Qwen"
 weight = 3
 
+# Industry-movement signals: high-value stories (leadership, funding, regulation,
+# scandal) often fail the research-oriented keyword set. Weight 3 means they need
+# one more frontier-AI signal to clear the gate, which keeps noise down while
+# letting the LLM review stage judge editorial importance.
+[[keywords]]
+term = "CEO"
+weight = 3
+
+[[keywords]]
+term = "chair"
+weight = 3
+
+[[keywords]]
+term = "leadership"
+weight = 3
+
+[[keywords]]
+term = "funding"
+weight = 3
+
+[[keywords]]
+term = "acquisition"
+weight = 3
+
+[[keywords]]
+term = "investigate"
+weight = 3
+
+[[keywords]]
+term = "lawsuit"
+weight = 3
+
+[[keywords]]
+term = "ban"
+weight = 3
+
+[[keywords]]
+term = "regulator"
+weight = 3
+
+[[keywords]]
+term = "boycott"
+weight = 3
+
 # Low-weight helpers: broaden recall without passing generic headlines alone.
 [[keywords]]
 term = "AI"
@@ -201,6 +247,11 @@ bonus = 2
 [[categories]]
 name = "research"
 keywords = ["paper", "arxiv", "study", "benchmark", "result", "SOTA"]
+bonus = 2
+
+[[categories]]
+name = "industry"
+keywords = ["CEO", "chair", "leadership", "funding", "acquisition", "investigate", "lawsuit", "ban", "regulator", "boycott", "partnership", "revenue", "IPO"]
 bonus = 2
 
 # Source registry — all verified reachable RSS/Atom feeds.
