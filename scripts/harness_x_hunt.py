@@ -54,29 +54,45 @@ def main() -> int:
     _cleanup()
     _seed()
 
-    # Inject a manually chosen X-style URL as agent-facilitated human-feed.
-    from scripts.x_hunt import inject_item
+    from scripts.x_hunt import inject_item, drop_item, _is_x_post_url
 
+    # 1. Injecting an original article URL should succeed.
     record = inject_item(
         vertical=VERTICAL,
         title="New open-weights model shows strong reasoning benchmarks",
-        url="https://x.com/example_ai/status/1234567890",
+        url="https://example-lab.ai/blog/reasoning-benchmarks",
         source_id="owner_tips",
         facilitated_by="agent",
     )
 
     if record.get("facilitated_by") != "agent":
         failures.append("injected item missing facilitated_by=agent")
+    if _is_x_post_url(record["url"]):
+        failures.append("original article URL was misclassified as X post")
+
+    # 2. Injecting an X post URL without resolution should drop the candidate.
+    drop_record = drop_item(
+        vertical=VERTICAL,
+        title="Some AI headline on X",
+        url="https://x.com/example_ai/status/1234567890",
+        source_id="owner_tips",
+        reason="unresolved_x_origin",
+    )
+    if drop_record.get("stage") != "dropped":
+        failures.append("drop_item did not record stage=dropped")
 
     items = tape.query(VERTICAL, type="item")
-    hf_items = [i for i in items if i.get("source_id") == "owner_tips" and i.get("stage") == "scanned"]
-    if len(hf_items) != 1:
-        failures.append(f"expected 1 scanned human-feed item, found {len(hf_items)}")
+    scanned_items = [i for i in items if i.get("source_id") == "owner_tips" and i.get("stage") == "scanned"]
+    dropped_items = [i for i in items if i.get("source_id") == "owner_tips" and i.get("stage") == "dropped"]
+    if len(scanned_items) != 1:
+        failures.append(f"expected 1 scanned human-feed item, found {len(scanned_items)}")
+    if len(dropped_items) != 1:
+        failures.append(f"expected 1 dropped human-feed item, found {len(dropped_items)}")
 
-    # Run the pipeline dry; the human-feed item should enter the funnel.
+    # Run the pipeline dry; only the original-article human-feed item should enter the funnel.
     result = run_pipeline(VERTICAL, dry=True, use_llm_report=False)
-    if result["prescreen"]["total_candidates"] < 1:
-        failures.append("human-feed item was not picked up by the pipeline")
+    if result["prescreen"]["total_candidates"] != 1:
+        failures.append(f"expected 1 candidate in funnel, found {result['prescreen']['total_candidates']}")
 
     # ECHO should generate a source-proposal question from the human-feed item.
     questions = prepare(VERTICAL)

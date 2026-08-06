@@ -205,15 +205,30 @@ The injected item still goes through the same prescreen, review, and dedup
 stages as pull/scan items — human-feed guarantees entry into the candidate
 pool, not a free pass into the report.
 
-**Reference implementation (`scripts/x_hunt.py`):**
+#### "Never stop at the message"
+
+A social-media post, headline, or tip is a **signal**, not a citation. Every
+injected item must resolve to the original article URL before it reaches the
+tape. If the agent can only find a post URL, `scripts/x_hunt.py` attempts a
+best-effort search for the original article; if that fails, the candidate is
+dropped and the reason is recorded on the tape. The published report never
+points readers at a post or headline as the final source.
+
+#### Reference implementation (`scripts/x_hunt.py`)
 
 `scripts/x_hunt.py` is deterministic bookkeeping: it writes an already-curated
 item to the tape. The search, read, and selection are the agent's judgment
 work, performed with the agent's own WebSearch/tools.
 
 ```bash
-# Preferred path: agent has already searched, read, and selected the post.
-python scripts/x_hunt.py --vertical ai-frontier \
+# Preferred path: agent has already resolved the headline to the original article URL.
+python scripts/x_hunt.py --vertical ai-frontier --source-id ainativef_zh \
+  --title "OpenAI announces GPT-5" \
+  --url "https://openai.com/blog/introducing-gpt-5" \
+  --inject
+
+# If only an X post URL is available, the script tries to resolve the original URL.
+python scripts/x_hunt.py --vertical ai-frontier --source-id ainativef_zh \
   --title "OpenAI announces GPT-5" \
   --url "https://x.com/OpenAI/status/1234567890" \
   --inject
@@ -229,14 +244,18 @@ python scripts/x_hunt.py --vertical ai-frontier \
 
 The injected record is written to the tape as an `item` with:
 
-- `source_id`: the human-feed source id (default `owner_tips`).
+- `source_id`: the registered source id (default `owner_tips`).
 - `stage`: `scanned` — it enters the pipeline at prescreen.
 - `facilitated_by`: `agent` — auditable provenance.
 
-**Separation of concerns:** judgment (search/read/select) belongs to the agent;
-bookkeeping (normalize URL, allocate id, append to tape) belongs to the script.
-This keeps the skill deterministic and leaves platform-specific retrieval
-strategies to the agent's own capabilities.
+Dropped records (unresolvable post URLs, off-topic candidates, etc.) are also
+appended to the tape with `stage: dropped` and a `drop_reason`, so the audit
+trail includes what did *not* make it.
+
+**Separation of concerns:** judgment (search/read/select/origin-resolution)
+belongs to the agent; bookkeeping (normalize URL, allocate id, append to tape)
+belongs to the script. This keeps the skill deterministic and leaves
+platform-specific retrieval strategies to the agent's own capabilities.
 
 This mode turns the platform from a passive content source into an active
 source-discovery hunt: when the agent repeatedly finds good stories from the

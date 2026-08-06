@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
-"""Agent-facilitated human-feed: bookkeep an X/AI candidate into the tape.
+"""Agent-facilitated discovery source: bookkeep a curated candidate into the tape.
 
 This script does **deterministic bookkeeping only** — it writes a curated item
 to the tape as a human-feed entry with `facilitated_by: agent`. The judgment
 (search, read, and selection) is the agent's job, performed with whatever
 WebSearch/tools the agent has available.
 
+Aperture's "never stop at the message" rule: an X/Twitter post is a signal,
+never the final citation. The URL injected must be the original English news
+article URL. If only an X post URL is available, the script attempts a
+best-effort DuckDuckGo resolution from the headline; if that fails, it drops
+the candidate and logs the reason on the tape.
+
 Usage:
-    # Inject an item the agent has already searched, read, and selected.
-    python scripts/x_hunt.py --vertical ai-frontier \
+    # Inject an item the agent has already resolved to the original article URL.
+    python scripts/x_hunt.py --vertical ai-frontier --source-id ainativef_zh \
         --title "OpenAI announces GPT-5" \
-        --url "https://x.com/OpenAI/status/1234567890" \
+        --url "https://openai.com/blog/introducing-gpt-5" \
         --inject
 
     # Best-effort automated search fallback (many engines block automated
@@ -31,7 +37,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -45,6 +51,31 @@ USER_AGENT = (
 )
 
 DEFAULT_HUMAN_FEED_SOURCE = "owner_tips"
+
+# X/Twitter status URLs are signals, not final sources. Aperture's "never stop at
+# the message" rule requires the original article URL before injection.
+_X_STATUS_RE = re.compile(r"https?://(x\.com|twitter\.com)/[^/]+/status/")
+
+
+def _is_x_post_url(url: str) -> bool:
+    return bool(_X_STATUS_RE.search(url or ""))
+
+
+def _resolve_original_url(title: str) -> Optional[str]:
+    """
+    Best-effort resolution of an original article URL from a headline.
+    Searches DuckDuckGo and returns the first result that is not an X/Twitter
+    post. Returns None if no non-X result is found.
+    """
+    if not title:
+        return None
+    results = _duckduckgo_html_search(title)
+    for r in results:
+        url = r.get("url", "")
+        if not url or _is_x_post_url(url):
+            continue
+        return url
+    return None
 
 
 def _fetch_url(url: str, timeout: int = 15) -> str:
@@ -119,6 +150,14 @@ def _filter_x_ai_results(results: List[Dict[str, str]]) -> List[Dict[str, str]]:
     return filtered
 
 
+def _resolve_source_name(vertical: str, source_id: str) -> str:
+    """Return the registered source name for source_id, or source_id itself."""
+    for s in tape.query(vertical, type="source"):
+        if s.get("id") == source_id:
+            return s.get("name") or source_id
+    return source_id
+
+
 def inject_item(
     vertical: str,
     title: str,
@@ -135,7 +174,7 @@ def inject_item(
         "id": item_id,
         "vertical": vertical,
         "source_id": source_id,
-        "source_name": source_id,
+        "source_name": _resolve_source_name(vertical, source_id),
         "title": title,
         "url": url,
         "url_norm": url_norm,
@@ -143,6 +182,32 @@ def inject_item(
         "scores": {},
         "ts": now,
         "facilitated_by": facilitated_by,
+    }
+    tape.append(vertical, record)
+    return record
+
+
+def drop_item(
+    vertical: str,
+    title: str,
+    url: str,
+    source_id: str = DEFAULT_HUMAN_FEED_SOURCE,
+    reason: str = "unresolved_origin",
+) -> Dict[str, Any]:
+    """Log an X-hunt candidate that could not be resolved to an original URL."""
+    now = datetime.now(timezone.utc).isoformat()
+    record = {
+        "type": "item",
+        "id": f"{source_id}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-drop",
+        "vertical": vertical,
+        "source_id": source_id,
+        "source_name": _resolve_source_name(vertical, source_id),
+        "title": title,
+        "url": url,
+        "stage": "dropped",
+        "drop_reason": reason,
+        "ts": now,
+        "facilitated_by": "agent",
     }
     tape.append(vertical, record)
     return record
@@ -163,6 +228,17 @@ def main() -> int:
     parser.add_argument("--url", help="URL of the agent-curated post")
     parser.add_argument("--inject", action="store_true", help="Write the candidate to the tape")
     parser.add_argument("--max-results", type=int, default=5, help="Max candidates to display")
+    parser.add_argument(
+        "--resolve",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Try to resolve X post URLs to original article URLs (default: True)",
+    )
+    parser.add_argument(
+        "--allow-x-url",
+        action="store_true",
+        help="Allow injecting an X post URL as the final source (requires explicit opt-in)",
+    )
     args = parser.parse_args()
 
     if args.title and args.url:
@@ -191,10 +267,39 @@ def main() -> int:
         return 0
 
     top = candidates[0]
+    title = top["title"]
+    url = top["url"]
+
+    # Enforce "never stop at the message": X post URLs must be resolved to the
+    # original article URL unless the operator explicitly opts out.
+    if _is_x_post_url(url):
+        if args.allow_x_url:
+            print("[warning] Injecting an X post URL as the final source (--allow-x-url).")
+        elif args.resolve:
+            print("[resolve] X post URL detected; attempting to resolve original article URL...")
+            resolved = _resolve_original_url(title)
+            if resolved:
+                print(f"[resolve] OK: {resolved}")
+                url = resolved
+            else:
+                print("[resolve] Failed: could not locate original article URL; dropping candidate.")
+                drop_item(
+                    vertical=args.vertical,
+                    title=title,
+                    url=top["url"],
+                    source_id=args.source_id,
+                    reason="unresolved_x_origin",
+                )
+                return 0
+        else:
+            print("[error] X post URLs are not allowed as final sources. "
+                  "Use --resolve to find the original article or --allow-x-url to override.")
+            return 1
+
     record = inject_item(
         vertical=args.vertical,
-        title=top["title"],
-        url=top["url"],
+        title=title,
+        url=url,
         source_id=args.source_id,
         facilitated_by="agent",
     )

@@ -344,6 +344,19 @@ url_group = 1
 window_hours = 36
 missing_date_policy = "include"
 
+# Discovery source: X account @ainativef_zh (AI Native 中文资讯).
+# This is a title/signal source, not a citable content source. X pages are
+# JS-rendered, so the static scanner cannot extract post links. We register the
+# account for registry transparency and health monitoring; actual candidates are
+# injected via scripts/x_hunt.py after the agent resolves the Chinese headline
+# to the original English news article URL. Aperture's "never stop at the
+# message" rule means an X post URL is never injected as the final source.
+[[sources]]
+id = "ainativef_zh"
+name = "AI Native 中文 (discovery)"
+list_url = "https://x.com/ainativef_zh"
+extract_profile = { method = "generic_links", window_hours = 36, missing_date_policy = "include" }
+
 # Human-feed source: owner/agent drops links (e.g. from X) during the daily window.
 # No list_url; entries are injected separately. It still participates in the
 # registry and can trigger ECHO source-proposal questions.
