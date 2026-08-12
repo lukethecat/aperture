@@ -107,6 +107,10 @@ term = "xAI"
 weight = 3
 
 [[keywords]]
+term = "Grok"
+weight = 4
+
+[[keywords]]
 term = "DeepMind"
 weight = 3
 
