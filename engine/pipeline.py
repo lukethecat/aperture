@@ -71,6 +71,7 @@ def ensure_profile(vertical: str, cfg: Dict[str, Any]) -> None:
         negatives=cfg.get("negatives", []),
         reason="loaded from config",
         threshold=cfg.get("threshold", 2),
+        language=cfg.get("language", "en"),
     )
 
 

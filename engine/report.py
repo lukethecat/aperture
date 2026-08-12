@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Set
 
 from . import tape
+from .profile import get_profile
 from .verifier import call_llm, get_llm_provider
 
 
@@ -27,13 +28,17 @@ def _utc_ts_to_local_date(ts: str) -> str:
     return dt.astimezone().strftime("%Y-%m-%d")
 
 
-def _vertical_display_name(vertical: str) -> str:
+def _vertical_display_name(vertical: str, language: str = "en") -> str:
     """Map a vertical slug to a human-readable report title."""
     mapping = {
-        "ai-frontier": "AI Frontier Daily",
-        "tech": "Tech Daily",
+        "ai-frontier": {"en": "AI Frontier Daily", "zh": "AI 前沿日报"},
+        "tech": {"en": "Tech Daily", "zh": "科技日报"},
     }
-    return mapping.get(vertical, f"{vertical.replace('-', ' ').title()} Daily")
+    names = mapping.get(vertical, {
+        "en": f"{vertical.replace('-', ' ').title()} Daily",
+        "zh": f"{vertical.replace('-', ' ')} 日报",
+    })
+    return names.get(language, names["en"])
 
 
 def _is_human_feed_source(source: Dict[str, Any]) -> bool:
@@ -54,12 +59,17 @@ def _human_feed_sources_with_items_today(vertical: str, today: str) -> Set[str]:
 
 
 def _format_simple_report(vertical: str, today: str, items: List[Dict[str, Any]],
-                          summary: str = "") -> str:
+                          summary: str = "", language: str = "en") -> str:
     """Fallback formatter when no LLM provider is available."""
-    title = _vertical_display_name(vertical)
+    title = _vertical_display_name(vertical, language)
+    editor_label = "编辑手记" if language == "zh" else "Editor's note"
+    summary_label = "摘要" if language == "zh" else "Summary"
+    source_label = "来源" if language == "zh" else "Source"
+    url_label = "链接" if language == "zh" else "URL"
+    score_label = "评分" if language == "zh" else "Score"
     lines = [f"# {title} · {today}", ""]
     if summary:
-        lines.append(f"> **Editor's note**: {summary}")
+        lines.append(f"> **{editor_label}**：{summary}")
         lines.append("")
     for idx, item in enumerate(items, 1):
         title = item.get("title", "")
@@ -69,22 +79,23 @@ def _format_simple_report(vertical: str, today: str, items: List[Dict[str, Any]]
         score = item.get("scores", {}).get("prescreen", 0)
         lines.append(f"{idx}. {title}")
         if item_summary:
-            lines.append(f"   Summary: {item_summary}")
+            lines.append(f"   {summary_label}：{item_summary}")
         if source:
-            lines.append(f"   Source: {source}")
+            lines.append(f"   {source_label}：{source}")
         if url:
-            lines.append(f"   URL: {url}")
-        lines.append(f"   Score: {score}")
+            lines.append(f"   {url_label}：{url}")
+        lines.append(f"   {score_label}：{score}")
         lines.append("")
     return "\n".join(lines)
 
 
 def _format_llm_report(vertical: str, today: str, items: List[Dict[str, Any]],
-                       summary: str = "") -> str:
+                       summary: str = "", language: str = "en") -> str:
     """Use the configured LLM provider to format the report."""
     if not items:
-        title = _vertical_display_name(vertical)
-        return f"# {title} · {today}\n\nNo items today."
+        title = _vertical_display_name(vertical, language)
+        no_items = "今日无条目。" if language == "zh" else "No items today."
+        return f"# {title} · {today}\n\n{no_items}"
 
     prompt_items = []
     for item in items:
@@ -96,37 +107,54 @@ def _format_llm_report(vertical: str, today: str, items: List[Dict[str, Any]],
         })
 
     import json
-    prompt = (
-        "You are a news editor. Turn the following items into a concise daily report. "
-        "Group related items. Output plain Markdown with sections.\n\n"
-        f"Editor's note (include at the top as a short paragraph): {summary}\n\n"
-        f"Items:\n{json.dumps(prompt_items, ensure_ascii=False, indent=1)}"
-    )
+    if language == "zh":
+        prompt = (
+            "你是一位中文科技新闻编辑。请将以下英文一手 AI 前沿资讯整理成一份简洁的中文日报。"
+            "标题和逐条点评用中文，保留原始英文来源和 URL。"
+            "将相关条目分组。输出纯 Markdown，顶部包含一段简短的编辑手记。\n\n"
+            f"编辑手记（置于顶部作为简短段落）：{summary}\n\n"
+            f"条目：\n{json.dumps(prompt_items, ensure_ascii=False, indent=1)}"
+        )
+    else:
+        prompt = (
+            "You are a news editor. Turn the following items into a concise daily report. "
+            "Group related items. Output plain Markdown with sections.\n\n"
+            f"Editor's note (include at the top as a short paragraph): {summary}\n\n"
+            f"Items:\n{json.dumps(prompt_items, ensure_ascii=False, indent=1)}"
+        )
     result = call_llm(prompt)
     if result and isinstance(result, str):
         return result
     if result and isinstance(result, dict) and "report" in result:
         return result["report"]
-    return _format_simple_report(vertical, today, items, summary)
+    return _format_simple_report(vertical, today, items, summary, language=language)
 
 
-def _generate_summary(items: List[Dict[str, Any]], use_llm: bool = False) -> str:
+def _generate_summary(items: List[Dict[str, Any]], use_llm: bool = False,
+                      language: str = "en") -> str:
     """
     Generate a 100-300 character daily summary of the pooled items.
     Falls back to a rule-based summary when no LLM is available.
     """
     if not items:
-        return "No frontier items made the cut today."
+        return "今日无条目入选。" if language == "zh" else "No frontier items made the cut today."
 
     if use_llm:
         provider = get_llm_provider()
         if provider:
             titles = [i.get("title", "") for i in items]
-            prompt = (
-                "Summarize the following AI-news headlines in one concise paragraph "
-                "(100-300 characters) describing the day's main thread. Be plain, no hype.\n\n"
-                "Headlines:\n" + "\n".join(f"- {t}" for t in titles)
-            )
+            if language == "zh":
+                prompt = (
+                    "请将以下 AI 前沿新闻标题总结成一段 100-300 字的中文编辑手记，"
+                    "概括今日主线。平实、不夸张。\n\n"
+                    "标题：\n" + "\n".join(f"- {t}" for t in titles)
+                )
+            else:
+                prompt = (
+                    "Summarize the following AI-news headlines in one concise paragraph "
+                    "(100-300 characters) describing the day's main thread. Be plain, no hype.\n\n"
+                    "Headlines:\n" + "\n".join(f"- {t}" for t in titles)
+                )
             result = call_llm(prompt)
             if result and isinstance(result, str):
                 summary = result.strip().strip('"').strip("'")
@@ -164,9 +192,16 @@ def _generate_summary(items: List[Dict[str, Any]], use_llm: bool = False) -> str
     themes = themes[:3]
 
     if not themes:
+        if language == "zh":
+            return f"今日共 {len(items)} 条入选，覆盖前沿多个方向。"
         return f"Today {len(items)} items made the cut across the frontier landscape."
 
-    theme_text = ", ".join(themes)
+    theme_text = "、".join(themes) if language == "zh" else ", ".join(themes)
+    if language == "zh":
+        return (
+            f"今日共 {len(items)} 条入选，主线围绕 {theme_text}。"
+            f"AI 前沿仍在多线并进。"
+        )
     return (
         f"Today {len(items)} items made the cut, centered on {theme_text}. "
         f"The frontier continues to move on multiple fronts at once."
@@ -233,9 +268,13 @@ def generate_report(vertical: str,
         for items in cluster_groups.values()
     ]
 
+    profile = get_profile(vertical) or {}
+    language = profile.get("language", "en")
+
     if not today_items:
-        title = _vertical_display_name(vertical)
-        body = f"# {title} · {today}\n\nNo pooled items today."
+        title = _vertical_display_name(vertical, language)
+        no_pooled = "今日无入选条目。" if language == "zh" else "No pooled items today."
+        body = f"# {title} · {today}\n\n{no_pooled}"
         return {
             "title": f"{title} · {today}",
             "body": body,
@@ -243,17 +282,22 @@ def generate_report(vertical: str,
         }
 
     provider = get_llm_provider()
-    summary = _generate_summary(today_items, use_llm=use_llm and provider is not None)
+    summary = _generate_summary(
+        today_items,
+        use_llm=use_llm and provider is not None,
+        language=language,
+    )
     if use_llm and provider:
-        body = _format_llm_report(vertical, today, today_items, summary=summary)
+        body = _format_llm_report(vertical, today, today_items, summary=summary, language=language)
     else:
-        body = _format_simple_report(vertical, today, today_items, summary=summary)
+        body = _format_simple_report(vertical, today, today_items, summary=summary, language=language)
 
     # Status footer
     lines = body.splitlines()
     lines.append("")
     lines.append("---")
-    lines.append("Aperture Stats")
+    stats_label = "Aperture 统计" if language == "zh" else "Aperture Stats"
+    lines.append(stats_label)
 
     frontpages = tape.query(vertical, type="frontpage")
     today_fp = [
@@ -281,26 +325,36 @@ def generate_report(vertical: str,
         if s.get("health", {}).get("fail_count", 0) == 0
     )
 
-    lines.append(f"- Sources: {len(source_map)} ({ok_sources} healthy) → scanned: {total_scanned}")
-    lines.append(
-        f"- Prescreened: {prescreened_count} → rejected: {rejected_count} → "
-        f"pooled: {len(today_items)} → report: {len(today_items)}"
-    )
-
-    if timings:
-        lines.append(f"- Timings: {_format_timing_footer(timings)}")
-
     alerts = [
         f"{s['name']}({s['health']['fail_count']} fails)"
         for s in source_map.values()
         if s.get("health", {}).get("fail_count", 0) >= 3
     ]
-    if alerts:
-        lines.append(f"- Alerts: {', '.join(alerts)}")
 
-    # Source registry
-    lines.append("")
-    lines.append("## Source registry")
+    if language == "zh":
+        lines.append(f"- 来源：{len(source_map)} 个（{ok_sources} 个健康）→ 扫描：{total_scanned}")
+        lines.append(
+            f"- 初筛：{prescreened_count} → 拒：{rejected_count} → "
+            f"入池：{len(today_items)} → 成稿：{len(today_items)}"
+        )
+        if timings:
+            lines.append(f"- 耗时：{_format_timing_footer(timings)}")
+        if alerts:
+            lines.append(f"- 告警：{', '.join(alerts)}")
+        lines.append("")
+        lines.append("## 来源注册表")
+    else:
+        lines.append(f"- Sources: {len(source_map)} ({ok_sources} healthy) → scanned: {total_scanned}")
+        lines.append(
+            f"- Prescreened: {prescreened_count} → rejected: {rejected_count} → "
+            f"pooled: {len(today_items)} → report: {len(today_items)}"
+        )
+        if timings:
+            lines.append(f"- Timings: {_format_timing_footer(timings)}")
+        if alerts:
+            lines.append(f"- Alerts: {', '.join(alerts)}")
+        lines.append("")
+        lines.append("## Source registry")
     hf_active_today = _human_feed_sources_with_items_today(vertical, today)
     for sid in sorted(source_map):
         s = source_map[sid]

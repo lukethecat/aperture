@@ -1,8 +1,9 @@
 # Vertical configuration: AI frontier daily
-# English sources -> English report.
+# English sources -> Chinese report.
 # Focus: frontier models, agents, benchmarks, safety, major lab moves, product launches.
 
 vertical = "ai-frontier"
+language = "zh"
 
 # Prescreen threshold: let more candidates reach the LLM review gate.
 # Frontier-editor tuning (2026-08-06): lowered from 6 to 3 so industry moves,

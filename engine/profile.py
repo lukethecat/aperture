@@ -23,6 +23,7 @@ def init_profile(
     negatives: List[Dict[str, Any]],
     reason: str = "initial profile",
     threshold: int = 2,
+    language: str = "en",
 ) -> Dict[str, Any]:
     """
     Create an initial profile (version=1). Does not overwrite an existing one.
@@ -30,6 +31,7 @@ def init_profile(
     keywords: [{"term": "AI", "weight": 5}, ...]
     categories: [{"name": "policy", "keywords": ["regulation"], "bonus": 2}, ...]
     negatives: [{"term": "sponsored", "weight": 3}, ...]
+    language: report output language code, e.g. "en" or "zh".
     """
     existing = get_profile(vertical)
     if existing:
@@ -53,6 +55,7 @@ def init_profile(
         "vertical": vertical,
         "version": 1,
         "threshold": threshold,
+        "language": language,
         "keywords": _normalize(keywords),
         "negatives": _normalize(negatives),
         "categories": categories,
