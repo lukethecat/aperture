@@ -104,12 +104,14 @@ class TestPrescreen(unittest.TestCase):
         self.assertEqual(result["reject_reason"], "low_score")
 
     def test_borderline(self):
+        # Score=5 must be borderline even when threshold is lower (e.g. 3),
+        # so it is held for editorial review instead of auto-passing.
         profile.init_profile(
             "v2",
             keywords=[{"term": "AI", "weight": 5}],
             categories=[],
             negatives=[],
-            threshold=6,
+            threshold=3,
             editorial_review_scores=[5],
         )
         result = prescreen.prescreen_item("New AI model released", "http://example.com/1", "v2")

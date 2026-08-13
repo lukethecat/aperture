@@ -73,11 +73,13 @@ def prescreen_item(title: str, _url_norm: str, vertical: str) -> Dict[str, Any]:
             matched_negatives.append({"term": term, "weight": weight})
             record_hit(vertical, term)
 
-    if score >= threshold:
-        status = "pass"
-        reject_reason = None
-    elif score in editorial_scores:
+    if score in editorial_scores:
+        # Editorial-review scores are a "maybe" zone: hold for human review
+        # even if they clear the threshold.
         status = "borderline"
+        reject_reason = None
+    elif score >= threshold:
+        status = "pass"
         reject_reason = None
     else:
         status = "reject"
