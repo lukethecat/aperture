@@ -11,6 +11,11 @@ language = "zh"
 # The review stage remains the real quality gate; negatives still filter obvious noise.
 threshold = 3
 
+# Editorial review scores: items with these exact scores are held in the
+# "borderline" pool for human review instead of being rejected outright.
+# This prevents mid-value frontier signals from being silently dropped.
+editorial_review_scores = [5]
+
 # High-weight terms: strong frontier-AI signals on their own.
 [[keywords]]
 term = "agent"

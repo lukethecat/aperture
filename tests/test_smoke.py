@@ -96,12 +96,26 @@ class TestPrescreen(unittest.TestCase):
 
     def test_pass_and_reject(self):
         result = prescreen.prescreen_item("New AI model released", "http://example.com/1", "v")
-        self.assertTrue(result["pass"])
+        self.assertEqual(result["status"], "pass")
         self.assertEqual(result["score"], 5)
 
         result = prescreen.prescreen_item("Sponsored post about AI", "http://example.com/2", "v")
-        self.assertFalse(result["pass"])
+        self.assertEqual(result["status"], "reject")
         self.assertEqual(result["reject_reason"], "low_score")
+
+    def test_borderline(self):
+        profile.init_profile(
+            "v2",
+            keywords=[{"term": "AI", "weight": 5}],
+            categories=[],
+            negatives=[],
+            threshold=6,
+            editorial_review_scores=[5],
+        )
+        result = prescreen.prescreen_item("New AI model released", "http://example.com/1", "v2")
+        self.assertEqual(result["status"], "borderline")
+        self.assertEqual(result["score"], 5)
+        self.assertIsNone(result["reject_reason"])
 
     def test_candidates(self):
         candidates = [

@@ -60,18 +60,28 @@ def load_config(path: str) -> Dict[str, Any]:
 
 
 def ensure_profile(vertical: str, cfg: Dict[str, Any]) -> None:
-    """Initialize the profile if it does not already exist on the tape."""
-    from .profile import get_profile
-    if get_profile(vertical):
+    """Initialize or sync the profile from the vertical config."""
+    from .profile import get_profile, sync_profile_from_config
+    existing = get_profile(vertical)
+    if not existing:
+        init_profile(
+            vertical,
+            keywords=cfg.get("keywords", []),
+            categories=cfg.get("categories", []),
+            negatives=cfg.get("negatives", []),
+            reason="loaded from config",
+            threshold=cfg.get("threshold", 2),
+            language=cfg.get("language", "en"),
+            editorial_review_scores=cfg.get("editorial_review_scores", []),
+        )
         return
-    init_profile(
+
+    # Sync config drift (threshold, language, editorial_review_scores).
+    sync_profile_from_config(
         vertical,
-        keywords=cfg.get("keywords", []),
-        categories=cfg.get("categories", []),
-        negatives=cfg.get("negatives", []),
-        reason="loaded from config",
-        threshold=cfg.get("threshold", 2),
-        language=cfg.get("language", "en"),
+        threshold=cfg.get("threshold"),
+        language=cfg.get("language"),
+        editorial_review_scores=cfg.get("editorial_review_scores"),
     )
 
 
@@ -191,8 +201,11 @@ def run_pipeline(vertical: str,
     t1 = time.time()
     ps = prescreen_candidates(candidates, vertical)
     timings["edit"] = time.time() - t1
-    print(f"[edit] {ps['passed']} passed / {ps['rejected']} rejected ({timings['edit']:.1f}s)",
-          flush=True)
+    print(
+        f"[edit] {ps['passed']} passed / {ps.get('borderline', 0)} borderline / "
+        f"{ps['rejected']} rejected ({timings['edit']:.1f}s)",
+        flush=True,
+    )
 
     # Review
     t2 = time.time()

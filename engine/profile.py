@@ -24,6 +24,7 @@ def init_profile(
     reason: str = "initial profile",
     threshold: int = 2,
     language: str = "en",
+    editorial_review_scores: Optional[List[int]] = None,
 ) -> Dict[str, Any]:
     """
     Create an initial profile (version=1). Does not overwrite an existing one.
@@ -56,6 +57,7 @@ def init_profile(
         "version": 1,
         "threshold": threshold,
         "language": language,
+        "editorial_review_scores": sorted(set(editorial_review_scores or [])),
         "keywords": _normalize(keywords),
         "negatives": _normalize(negatives),
         "categories": categories,
@@ -64,6 +66,53 @@ def init_profile(
     }
     tape.append(vertical, profile)
     return profile
+
+
+def sync_profile_from_config(
+    vertical: str,
+    threshold: Optional[int] = None,
+    language: Optional[str] = None,
+    editorial_review_scores: Optional[List[int]] = None,
+) -> Optional[Dict[str, Any]]:
+    """Sync profile fields from config when they drift. Writes a new profile record."""
+    old_profile = get_profile(vertical)
+    if not old_profile:
+        return None
+
+    new_threshold = threshold if threshold is not None else old_profile.get("threshold", 2)
+    new_language = language if language is not None else old_profile.get("language", "en")
+    new_ers = sorted(set(editorial_review_scores if editorial_review_scores is not None else old_profile.get("editorial_review_scores", [])))
+
+    if (
+        old_profile.get("threshold") == new_threshold
+        and old_profile.get("language") == new_language
+        and old_profile.get("editorial_review_scores") == new_ers
+    ):
+        return old_profile
+
+    new_profile = copy.deepcopy(old_profile)
+    now = datetime.now(timezone.utc)
+    new_profile["version"] = old_profile["version"] + 1
+    new_profile["threshold"] = new_threshold
+    new_profile["language"] = new_language
+    new_profile["editorial_review_scores"] = new_ers
+    new_profile["updated_at"] = now.isoformat()
+    new_profile["reason"] = "synced from config"
+
+    tape.append(vertical, new_profile)
+    tape.append(
+        vertical,
+        {
+            "type": "evolution",
+            "vertical": vertical,
+            "from_version": old_profile["version"],
+            "to_version": new_profile["version"],
+            "ops": [{"op": "sync_from_config", "threshold": new_threshold, "language": new_language, "editorial_review_scores": new_ers}],
+            "reason": "synced from config",
+            "date": now.isoformat(),
+        },
+    )
+    return new_profile
 
 
 def update_profile(

@@ -217,6 +217,24 @@ def _format_timing_footer(timings: Dict[str, float]) -> str:
     return f"Total: {total:.1f}s ({parts})"
 
 
+def _format_editorial_review_pool(items: List[Dict[str, Any]], language: str = "en") -> str:
+    """Render the editorial review pool section for borderline items."""
+    if not items:
+        return ""
+    er_label = "编辑复审池" if language == "zh" else "Editorial review pool"
+    er_hint = (
+        "以下条目 score=5，未进入主报告，请 frontier-editor 每日审稿时 yes/no/skip："
+        if language == "zh"
+        else "The following score=5 items are held for daily editorial review:"
+    )
+    lines = ["", "---", er_label, er_hint]
+    for idx, item in enumerate(items, 1):
+        lines.append(f"{idx}. {item.get('title', '')}")
+        lines.append(f"   来源：{item.get('source_name', '')} — {item.get('url', '')}")
+        lines.append(f"   评分：{item.get('scores', {}).get('prescreen', 0)}")
+    return "\n".join(lines)
+
+
 def _source_acquisition_badge(extract_profile: Dict[str, Any], list_url: str) -> str:
     """
     Map extraction method to acquisition taxonomy badge.
@@ -257,6 +275,11 @@ def generate_report(vertical: str,
         if i.get("stage") == "pooled"
         and _utc_ts_to_local_date(i.get("ts", "")) == today
     ]
+    today_borderline = [
+        i for i in all_items
+        if i.get("stage") == "borderline"
+        and _utc_ts_to_local_date(i.get("ts", "")) == today
+    ]
     # Deduplication may cluster same-event items from different sources.
     # Keep only the highest-scoring item from each cluster for the report.
     cluster_groups: Dict[str, List[Dict[str, Any]]] = {}
@@ -275,6 +298,7 @@ def generate_report(vertical: str,
         title = _vertical_display_name(vertical, language)
         no_pooled = "今日无入选条目。" if language == "zh" else "No pooled items today."
         body = f"# {title} · {today}\n\n{no_pooled}"
+        body += _format_editorial_review_pool(today_borderline, language=language)
         return {
             "title": f"{title} · {today}",
             "body": body,
@@ -292,7 +316,9 @@ def generate_report(vertical: str,
     else:
         body = _format_simple_report(vertical, today, today_items, summary=summary, language=language)
 
-    # Status footer
+    # Editorial review pool
+    body += _format_editorial_review_pool(today_borderline, language=language)
+
     lines = body.splitlines()
     lines.append("")
     lines.append("---")

@@ -38,10 +38,11 @@ def _term_matches(text_lower: str, term: str) -> bool:
 def prescreen_item(title: str, _url_norm: str, vertical: str) -> Dict[str, Any]:
     """
     Score a single candidate. Returns a dict with score, matches,
-    pass flag, and reject_reason.
+    pass/borderline/reject flag, and reject_reason.
     """
     profile = get_profile(vertical) or {}
     threshold = profile.get("threshold", DEFAULT_THRESHOLD)
+    editorial_scores = set(profile.get("editorial_review_scores", []))
     pos_kw, neg_kw = get_keyword_map(vertical)
     categories = get_categories(vertical)
 
@@ -72,27 +73,38 @@ def prescreen_item(title: str, _url_norm: str, vertical: str) -> Dict[str, Any]:
             matched_negatives.append({"term": term, "weight": weight})
             record_hit(vertical, term)
 
-    passed = score >= threshold
+    if score >= threshold:
+        status = "pass"
+        reject_reason = None
+    elif score in editorial_scores:
+        status = "borderline"
+        reject_reason = None
+    else:
+        status = "reject"
+        reject_reason = "low_score"
+
     return {
         "score": score,
         "matched_keywords": matched_keywords,
         "matched_categories": matched_categories,
         "matched_negatives": matched_negatives,
-        "pass": passed,
-        "reject_reason": None if passed else "low_score",
+        "status": status,
+        "reject_reason": reject_reason,
     }
 
 
 def prescreen_candidates(candidates: List[Dict[str, Any]],
                          vertical: str) -> Dict[str, Any]:
     """
-    Batch prescreen. Passed items become stage=prescreened; failed items
-    become stage=rejected with reject_reason.
+    Batch prescreen. Passed items become stage=prescreened; borderline items
+    become stage=borderline for editorial review; failed items become
+    stage=rejected with reject_reason.
     """
     now = datetime.now(timezone.utc)
     today = now.strftime("%Y-%m-%d")
 
     passed = []
+    borderline = []
     rejected = []
 
     for c in candidates:
@@ -117,10 +129,14 @@ def prescreen_candidates(candidates: List[Dict[str, Any]],
             "published_at": c.get("pub_date", ""),
         }
 
-        if result["pass"]:
+        if result["status"] == "pass":
             item_record["stage"] = "prescreened"
             tape.append(vertical, item_record)
             passed.append(item_record)
+        elif result["status"] == "borderline":
+            item_record["stage"] = "borderline"
+            tape.append(vertical, item_record)
+            borderline.append(item_record)
         else:
             item_record["stage"] = "rejected"
             item_record["reject_reason"] = result["reject_reason"]
@@ -143,6 +159,7 @@ def prescreen_candidates(candidates: List[Dict[str, Any]],
         "date": today,
         "total_candidates": len(candidates),
         "passed": len(passed),
+        "borderline": len(borderline),
         "rejected": len(rejected),
         "reject_reasons": reject_reasons,
         "score_min": min(scores) if scores else 0,
@@ -150,15 +167,17 @@ def prescreen_candidates(candidates: List[Dict[str, Any]],
         "score_avg": round(sum(scores) / len(scores), 1) if scores else 0,
         "top_keywords": sorted(kw_hits.items(), key=lambda x: -x[1])[:10],
         "passed_items": passed,
+        "borderline_items": borderline,
         "rejected_items": rejected,
     }
 
 
 def print_prescreen_stats(stats: Dict[str, Any]) -> str:
     """Format prescreen stats as human-readable text."""
+    borderline = stats.get("borderline", 0)
     lines = [
         f"=== Prescreen {stats['date']} ===",
-        f"Candidates: {stats['total_candidates']} -> passed: {stats['passed']} / rejected: {stats['rejected']}",
+        f"Candidates: {stats['total_candidates']} -> passed: {stats['passed']} / borderline: {borderline} / rejected: {stats['rejected']}",
     ]
     if stats["passed"] > 0:
         lines.append(f"Score range: {stats['score_min']}~{stats['score_max']} (avg {stats['score_avg']})")
