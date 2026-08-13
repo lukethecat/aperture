@@ -219,9 +219,10 @@ def _format_timing_footer(timings: Dict[str, float]) -> str:
 
 def _format_editorial_review_pool(items: List[Dict[str, Any]], language: str = "en") -> str:
     """Render the editorial review pool section for borderline items."""
-    if not items:
-        return ""
     er_label = "编辑复审池" if language == "zh" else "Editorial review pool"
+    if not items:
+        empty_hint = "今日无 score=5 候选。" if language == "zh" else "No score=5 candidates today."
+        return "\n".join(["", "---", er_label, empty_hint])
     er_hint = (
         "以下条目 score=5，未进入主报告，请 frontier-editor 每日审稿时 yes/no/skip："
         if language == "zh"
