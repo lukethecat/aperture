@@ -54,14 +54,23 @@ One JSON object **per line** (streaming: emit as you collect; do not buffer the 
 | `platform` | ⬜ | `weibo` / `douyin` / … |
 | `event_key` | ⬜ | event grouping key, see issue [#6](https://github.com/lukethecat/aperture/issues/6) |
 
-### Exit codes
+### Exit codes — three-state, not boolean
 
-| Code | Meaning |
-|---|---|
-| `0` | success (may still emit zero lines — that is a valid empty run) |
-| non-zero | failure — **must** increment `health.fail_count`; do **not** treat as "0 items" |
+A boolean (success / failure) is not enough: "collected nothing" and "couldn't collect" are
+different facts and must not collapse into the same signal.
+
+| Code | Meaning | Effect on health |
+|---|---|---|
+| `0` | **collected** — may be N>0, or 0 lines meaning *genuinely nothing new* | healthy; badge ⚪ if 0 lines from a feed-style source |
+| `2` | **endpoint unreachable / blocked** — not "no content", but "did not get it" | `fail_count += 1`; badge 🟡/🔴 |
+| `3` | **parse failure** — got bytes but could not interpret them | `fail_count += 1`; badge 🟡/🔴 |
+| other non-zero | unexpected failure — treat as `2` (unreachable) for health purposes | `fail_count += 1` |
 
 Write failure reasons to **stderr** only.
+
+> This mirrors the `0` / `1` / `3` three-state pattern used by `check_rendered.py` in the
+> website project: *passed* / *found problems* / *could not check*. The third state is the
+> one that stops "I couldn't verify" from silently becoming "verified clean".
 
 ### Optional `--out <path>`
 
@@ -87,13 +96,20 @@ and keep `window_hours` short (1–3h) so stale hot-search rows do not accumulat
 ## Failure semantics (important)
 
 ```text
-adapter exits non-zero      → fail_count += 1   → report badge 🟡/🔴
-adapter times out           → fail_count += 1   → same
-adapter emits 0 lines       → healthy, 0 items  → badge ⚪ (human-feed style)
+exit 0, N>0 lines   → healthy, N items
+                        → badge 🟢
+exit 0, 0 lines     → healthy, genuinely nothing new
+                        → badge ⚪ (feed-style idle)
+exit 2              → endpoint unreachable / blocked
+                        → fail_count += 1 → badge 🟡/🔴
+exit 3              → got bytes, could not parse
+                        → fail_count += 1 → badge 🟡/🔴
+timeout             → treat as exit 2
 ```
 
 Never conflate "couldn't collect" with "collected nothing". That distinction is exactly what
-the status footer exists to surface.
+the status footer exists to surface — and it is the same three-state discipline the website
+project adopted after "the checker said clean but it had only checked the data layer".
 
 ## Reference implementation: Weibo hot search
 
